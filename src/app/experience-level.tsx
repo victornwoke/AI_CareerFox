@@ -1,7 +1,7 @@
 import { useAuth } from "@clerk/expo";
 import { Image } from "expo-image";
-import { Redirect, type Href } from "expo-router";
-import { useState } from "react";
+import { Redirect, type Href, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -16,6 +16,7 @@ type ExperienceOption = {
 };
 
 const signInHref = "/sign-in" as Href;
+const targetRoleHref = "/target-role" as Href;
 
 const experienceOptions: ExperienceOption[] = [
   {
@@ -57,6 +58,7 @@ const experienceOptions: ExperienceOption[] = [
 
 export default function ExperienceLevelScreen() {
   const { isLoaded, isSignedIn } = useAuth();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [selectedExperienceId, setSelectedExperienceId] = useState("junior");
@@ -91,6 +93,14 @@ export default function ExperienceLevelScreen() {
   const optionHeight = Math.max(64, Math.min(maxOptionHeight, availableOptionHeight));
   const optionIconSize = Math.min(isCompactHeight ? 50 : 64, optionHeight - 18);
   const radioSize = isCompactHeight ? 30 : 38;
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace(targetRoleHref);
+  }, [router]);
 
   if (!isLoaded) {
     return null;
@@ -217,20 +227,39 @@ export default function ExperienceLevelScreen() {
           })}
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          className="items-center justify-center rounded-[18px]"
-          style={{
-            backgroundColor: colors.primary,
-            boxShadow: "0 18px 34px rgba(108, 78, 245, 0.18)",
-            height: buttonHeight,
-            marginTop: buttonTopGap,
-          }}
-        >
-          <Text className="text-[17px] font-bold leading-[24px] text-white">
-            Continue to Dashboard →
-          </Text>
-        </Pressable>
+        <View className="flex-row gap-3" style={{ marginTop: buttonTopGap }}>
+          <Pressable
+            accessibilityLabel="Go back to target role selection"
+            accessibilityRole="button"
+            className="items-center justify-center rounded-[18px] border-[2px] border-[#EEE1FF] bg-[#F6F2FF]"
+            onPress={handleBack}
+            style={{
+              height: buttonHeight,
+              width: buttonHeight,
+            }}
+          >
+            <Image
+              accessibilityLabel="Back"
+              contentFit="contain"
+              source="sf:chevron.left"
+              style={{ height: 22, tintColor: colors.primary, width: 22 }}
+            />
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            className="flex-1 items-center justify-center rounded-[18px]"
+            style={{
+              backgroundColor: colors.primary,
+              boxShadow: "0 18px 34px rgba(108, 78, 245, 0.18)",
+              height: buttonHeight,
+            }}
+          >
+            <Text className="text-[17px] font-bold leading-[24px] text-white">
+              Continue to Dashboard →
+            </Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );
