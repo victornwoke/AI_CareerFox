@@ -82,34 +82,62 @@ for (const bl of blockLines) {
   if (refMatch) allRefs.add(refMatch[1]);
 }
 
+function pointerPart(part) {
+  return part.replace(/~1/g, "/").replace(/~0/g, "~");
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function lineIndent(line) {
+  return line.length - line.trimStart().length;
+}
+
+function findScopeEnd(start, indent) {
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim() === "") continue;
+    if (lineIndent(line) <= indent) return i;
+  }
+  return lines.length;
+}
+
 // Resolve a $ref path to the raw YAML lines for that component
 function resolveRef(ref) {
-  const parts = ref.replace("#/", "").split("/");
-  // Find the component in the file by walking indentation
-  let searchStart = 0;
+  const parts = ref.replace("#/", "").split("/").map(pointerPart);
+  let scopeStart = 0;
+  let scopeEnd = lines.length;
+  let foundIndex = -1;
+
   for (let p = 0; p < parts.length; p++) {
     const indent = p * 2;
-    const target = " ".repeat(indent) + parts[p] + ":";
-    let found = false;
-    for (let i = searchStart; i < lines.length; i++) {
-      if (lines[i].startsWith(target) && (lines[i] === target || lines[i][target.length] === " ")) {
-        searchStart = i + 1;
-        found = true;
+    const keyPattern = new RegExp(`^ {${indent}}${escapeRegExp(parts[p])}:\\s*(?:.*)?$`);
+    foundIndex = -1;
+
+    for (let i = scopeStart; i < scopeEnd; i++) {
+      if (keyPattern.test(lines[i])) {
+        foundIndex = i;
         break;
       }
     }
-    if (!found) return null;
+
+    if (foundIndex < 0) {
+      throw new Error(`Could not resolve ref segment "${parts[p]}" in ${ref}`);
+    }
+
+    scopeStart = foundIndex + 1;
+    scopeEnd = findScopeEnd(foundIndex, indent);
   }
 
   // Collect lines for this component (until same or lower indent)
-  const componentStart = searchStart - 1;
   const baseIndent = parts.length * 2;
   const result = [];
-  for (let i = searchStart; i < lines.length; i++) {
+  for (let i = scopeStart; i < scopeEnd; i++) {
     const line = lines[i];
     if (line.trim() === "") { result.push(line); continue; }
-    const lineIndent = line.length - line.trimStart().length;
-    if (lineIndent < baseIndent) break;
+    const indent = lineIndent(line);
+    if (indent < baseIndent) break;
     result.push(line);
   }
   return result;
@@ -121,7 +149,6 @@ function collectDeepRefs(refSet, visited) {
   for (const ref of toProcess) {
     visited.add(ref);
     const body = resolveRef(ref);
-    if (!body) continue;
     for (const bl of body) {
       const refMatch = bl.match(/\$ref:\s*['"]?(#\/[^'"}\s]+)['"]?/);
       if (refMatch && !visited.has(refMatch[1])) {
@@ -153,13 +180,9 @@ if (allRefs.size > 0) {
     const category = ref.replace("#/", "").split("/").slice(0, -1).join("/");
     console.log(`#### \`${name}\` (${category})\n`);
     const body = resolveRef(ref);
-    if (body) {
-      console.log("```yaml");
-      for (const bl of body) console.log(bl);
-      console.log("```\n");
-    } else {
-      console.log("_(could not resolve)_\n");
-    }
+    console.log("```yaml");
+    for (const bl of body) console.log(bl);
+    console.log("```\n");
   }
 }
 SCRIPT

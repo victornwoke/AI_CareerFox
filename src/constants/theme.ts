@@ -89,17 +89,18 @@ export const componentStyles = {
     boxShadow: shadows.card,
   },
   primaryButton: {
+    backgroundColor: colors.primary,
     borderRadius: radii.md,
     boxShadow: shadows.button,
-    minHeight: 64,
+    minHeight: 56,
   },
   input: {
-    backgroundColor: colors.white,
-    borderColor: colors.border,
-    borderRadius: radii.md,
+    backgroundColor: colors.authFieldBackground,
+    borderColor: colors.authBorder,
+    borderRadius: radii.lg,
     borderWidth: 1,
     minHeight: 56,
-    paddingHorizontal: spacing.controlX,
+    paddingHorizontal: spacing.card,
   },
 } as const;
 

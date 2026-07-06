@@ -138,7 +138,7 @@ export function VerificationModal({
           className="flex-1 items-center px-6"
           style={{ minHeight: height, paddingTop: insets.top + 126 }}
         >
-          <View className="h-32 w-32 items-center justify-center rounded-full bg-[#E6DEFF]">
+          <View className="h-32 w-32 items-center justify-center rounded-full bg-verification-icon-background">
             <Image
               accessibilityLabel="Verification email icon"
               contentFit="contain"
@@ -158,7 +158,7 @@ export function VerificationModal({
           <Text className="mt-14 text-center text-[28px] font-bold leading-[34px] text-text-primary">
             Check your email
           </Text>
-          <Text className="mt-5 text-center text-[16px] font-semibold leading-[23px] text-[#8F92A8]">
+          <Text className="mt-5 text-center text-[16px] font-semibold leading-[23px] text-auth-muted">
             We sent a 6-digit verification code to
           </Text>
           <Text className="mt-1 text-center text-[16px] font-bold leading-[23px] text-primary">
@@ -182,7 +182,7 @@ export function VerificationModal({
                 returnKeyType="done"
                 selectTextOnFocus
                 style={[styles.codeInput, {
-                  borderColor: digit ? colors.primary : "#E2DBFF",
+                  borderColor: digit ? colors.primary : colors.verificationCodeBorder,
                 }]}
                 textContentType="oneTimeCode"
                 value={digit}
@@ -222,7 +222,7 @@ export function VerificationModal({
           </Pressable>
 
           <View className="mt-7 flex-row justify-center">
-            <Text className="text-[15px] font-medium leading-[22px] text-[#8F92A8]">
+            <Text className="text-[15px] font-medium leading-[22px] text-auth-muted">
               Didn’t receive code?{" "}
             </Text>
             <Pressable
@@ -243,7 +243,7 @@ export function VerificationModal({
 
 const styles = StyleSheet.create({
   codeInput: {
-    backgroundColor: "#F6F2FF",
+    backgroundColor: colors.authFieldBackground,
     borderRadius: 16,
     borderWidth: 1.5,
     color: colors.textPrimary,

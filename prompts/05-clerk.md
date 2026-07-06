@@ -1093,32 +1093,6 @@ This approach uses custom flows built with React Native components and **works i
     - Enter your details and complete the authentication flow.
     - After signing up, your first user will be created and you'll be signed in.
 
-      },
-    })
-    ```
-
-12. ## Run your project
-
-    Run your project with the following command:
-
-    ```bash
-    npx expo start
-    ```
-
-    Then use the terminal shortcuts to run the app on your preferred platform:
-
-    - Press `i` to open the iOS simulator.
-    - Press `a` to open the Android emulator.
-    - Scan the QR code with Expo Go to run the app on a physical device.
-
-13. ## Create your first user
-
-    Once the app opens on your device or simulator:
-
-    - Open the sign-up flow.
-    - Enter your details and complete the authentication flow.
-    - After signing up, your first user will be created and you'll be signed in.
-
 14. ## Native sign-in with Google and Apple (optional)
 
     If you want to add native Sign in with Google and Sign in with Apple buttons that authenticate without opening a browser, refer to the [Sign in with Google](https://clerk.com/docs/expo/guides/configure/auth-strategies/sign-in-with-google.md) and [Sign in with Apple](https://clerk.com/docs/expo/guides/configure/auth-strategies/sign-in-with-apple.md) guides for full setup instructions, including any additional dependencies specific to each provider. **This approach requires a [development build](https://docs.expo.dev/develop/development-builds/introduction/) because it uses native modules. It cannot run in Expo Go.**

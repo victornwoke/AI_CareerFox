@@ -46,15 +46,15 @@
     {
       "id": 4,
       "prompt": "setting up a react spa with vite for an internal tool at work. no ssr, no next.js. just plain react 19 + react-router. need login/logout. whats the quickest way to get clerk working?",
-      "expected_output": "Installs @clerk/react, wraps app with ClerkProvider, no middleware needed for SPA",
+      "expected_output": "Installs @clerk/react-router, wraps the React Router app with ClerkProvider, no middleware needed for SPA-style routing",
       "files": [],
       "expectations": [
-        "Installs @clerk/react (not @clerk/nextjs or @clerk/clerk-react)",
+        "Installs @clerk/react-router (not @clerk/nextjs, @clerk/react, or @clerk/clerk-react)",
         "Wraps app root with ClerkProvider and passes publishableKey",
         "Does NOT create middleware.ts or proxy.ts (not applicable to SPAs)",
         "Does NOT reference Next.js-specific patterns like server components or auth()",
-        "Shows SignIn/SignUp components or redirect-based auth flow",
-        "Sets up NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY or VITE_CLERK_PUBLISHABLE_KEY env var"
+        "Shows React Router-compatible SignIn/SignUp routes or redirect-based auth flow",
+        "Sets up VITE_CLERK_PUBLISHABLE_KEY env var"
       ]
     },
     {

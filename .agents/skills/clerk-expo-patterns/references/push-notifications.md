@@ -1,6 +1,7 @@
 # Push Notifications with User Context
 
-Store the Expo push token against the Clerk user using `publicMetadata` or your own database.
+Store the Expo push token against the Clerk user using `unsafeMetadata` from the
+client, or write it to `publicMetadata`/your own database from a trusted server.
 
 ## Register Push Token After Sign-In
 
@@ -51,7 +52,7 @@ import { clerkClient } from '@clerk/nextjs/server'
 async function sendNotification(userId: string, title: string, body: string) {
   const client = await clerkClient()
   const user = await client.users.getUser(userId)
-  const token = user.publicMetadata?.expoPushToken as string | undefined
+  const token = user.unsafeMetadata?.expoPushToken as string | undefined
 
   if (!token) return
 
@@ -65,6 +66,6 @@ async function sendNotification(userId: string, title: string, body: string) {
 
 ## CRITICAL
 
-- `user.update()` is client-side — it writes `unsafeMetadata` without server auth
-- For verified/sensitive data, use the Clerk Backend SDK from your server to write `publicMetadata`
+- `user.update()` is client-side — this example writes and reads `unsafeMetadata`
+- For verified/sensitive data, use the Clerk Backend SDK from your server to write and read `publicMetadata`
 - Re-register the push token if `user.id` changes (org switch does not change user.id, but sign-out/sign-in as different user does)

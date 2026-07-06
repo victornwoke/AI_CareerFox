@@ -8,92 +8,23 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AuthField } from "@/components/auth/AuthField";
 import { VerificationModal } from "@/components/auth/VerificationModal";
 import { colors } from "@/constants/colors";
 import { images } from "@/constants/images";
-import { radii, spacing } from "@/constants/theme";
+import { componentStyles } from "@/constants/theme";
 import {
   useSocialAuth,
   type SocialAuthProvider,
 } from "@/hooks/useSocialAuth";
 import { getClerkErrorMessage } from "@/lib/clerkErrors";
 
-type AuthFieldProps = {
-  icon: string;
-  onChangeText: (value: string) => void;
-  placeholder: string;
-  secureTextEntry?: boolean;
-  showToggle?: boolean;
-  textContentType?: "emailAddress" | "password";
-  value: string;
-  onToggleSecure?: () => void;
-};
-
 const goalSetupHref = "/target-role" as Href;
-
-function AuthField({
-  icon,
-  onChangeText,
-  placeholder,
-  secureTextEntry,
-  showToggle,
-  textContentType,
-  value,
-  onToggleSecure,
-}: AuthFieldProps) {
-  return (
-    <View
-      className="input-field flex-row items-center gap-3"
-      style={{
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        borderRadius: radii.lg,
-        height: 56,
-        paddingHorizontal: spacing.card,
-      }}
-    >
-      <Image
-        contentFit="contain"
-        source={`sf:${icon}`}
-        style={{ height: 22, tintColor: colors.textSecondary, width: 22 }}
-      />
-      <TextInput
-        autoCapitalize="none"
-        className="flex-1 text-[16px] font-semibold text-text-primary"
-        inputMode={textContentType === "emailAddress" ? "email" : "text"}
-        keyboardType={
-          textContentType === "emailAddress" ? "email-address" : "default"
-        }
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={colors.textSecondary}
-        secureTextEntry={secureTextEntry}
-        textContentType={textContentType}
-        value={value}
-      />
-      {showToggle ? (
-        <Pressable
-          accessibilityLabel={secureTextEntry ? "Show password" : "Hide password"}
-          accessibilityRole="button"
-          className="h-10 w-10 items-end justify-center"
-          onPress={onToggleSecure}
-        >
-          <Image
-            contentFit="contain"
-            source="sf:eye"
-            style={{ height: 22, tintColor: colors.textSecondary, width: 22 }}
-          />
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -334,14 +265,12 @@ export default function SignInScreen() {
 
             <Pressable
               accessibilityRole="button"
-              className="mt-2 h-[56px] items-center justify-center rounded-[16px]"
+              className="mt-2 items-center justify-center"
               disabled={isAuthLoading}
               onPress={() => void handleSubmit()}
-              style={{
-                backgroundColor: colors.primary,
-                boxShadow: "0 16px 30px rgba(108, 78, 245, 0.22)",
+              style={[componentStyles.primaryButton, {
                 opacity: isAuthLoading ? 0.84 : 1,
-              }}
+              }]}
             >
               {isLoading ? (
                 <ActivityIndicator color={colors.white} />
@@ -351,18 +280,18 @@ export default function SignInScreen() {
             </Pressable>
 
             <View className="my-5 flex-row items-center gap-4">
-              <View className="h-px flex-1 bg-[#EEE7FF]" />
-              <Text className="text-[13px] font-medium leading-[18px] text-[#8F92A8]">
+              <View className="h-px flex-1 bg-auth-divider" />
+              <Text className="text-[13px] font-medium leading-[18px] text-auth-muted">
                 or
               </Text>
-              <View className="h-px flex-1 bg-[#EEE7FF]" />
+              <View className="h-px flex-1 bg-auth-divider" />
             </View>
 
             <View className="flex-row gap-2">
               {(["Google", "Apple", "LinkedIn"] satisfies SocialAuthProvider[]).map((provider) => (
                 <Pressable
                   accessibilityRole="button"
-                  className="h-[46px] flex-1 items-center justify-center rounded-[18px] border border-[#E9E0FF] bg-white px-1"
+                  className="h-[46px] flex-1 items-center justify-center rounded-[18px] border border-auth-border bg-white px-1"
                   disabled={isAuthLoading}
                   key={provider}
                   onPress={() => void handleSocialAuth(provider)}
@@ -371,7 +300,7 @@ export default function SignInScreen() {
                   {socialLoadingProvider === provider ? (
                     <ActivityIndicator color={colors.primary} size="small" />
                   ) : (
-                    <Text className="text-[13px] font-bold text-[#8F92A8]">
+                    <Text className="text-[13px] font-bold text-auth-muted">
                       {provider}
                     </Text>
                   )}
@@ -381,7 +310,7 @@ export default function SignInScreen() {
           </View>
 
           <View className="mt-7 px-6">
-            <Text className="text-center text-[15px] font-medium leading-[22px] text-[#8F92A8]">
+            <Text className="text-center text-[15px] font-medium leading-[22px] text-auth-muted">
               Don’t have an account?{" "}
               <Link href="/sign-up">
                 <Text className="font-bold text-primary">Sign up</Text>

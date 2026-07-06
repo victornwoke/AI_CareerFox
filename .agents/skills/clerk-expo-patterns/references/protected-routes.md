@@ -2,13 +2,15 @@
 
 ## Layout-Level Guard
 
-Protect an entire group in `app/(auth)/_layout.tsx`:
+Keep sign-in and sign-up screens in a public group such as `app/(public)/` or
+`app/(auth)/`. Put the auth guard around the protected route group, for example
+`app/(protected)/_layout.tsx`:
 
 ```tsx
 import { useAuth } from '@clerk/expo'
 import { Redirect, Stack } from 'expo-router'
 
-export default function AuthLayout() {
+export default function ProtectedLayout() {
   const { isSignedIn, isLoaded } = useAuth()
 
   if (!isLoaded) return null

@@ -32,7 +32,7 @@ clerk init --framework <next|react|vue|nuxt|astro|react-router|tanstack-react-st
 
 ```bash
 clerk auth login                      # one-time OAuth (skip if already logged in)
-clerk link                            # autolinks if a CLERK_PUBLISHABLE_KEY is in your .env
+clerk link                            # autolinks if a framework-specific publishable key is in your .env
 clerk link --app app_xxx              # explicit form, required in agent mode
 clerk env pull                        # writes the framework-detected env vars
 ```
@@ -67,7 +67,7 @@ clerk api --platform POST /v1/platform/applications/<app_id>/rotate_secret_keys 
 
 ### Notes for agents
 
-- `clerk link` (no flags) only autolinks when a `CLERK_PUBLISHABLE_KEY` is already in `.env` / `.env.local`. Without it, agent mode errors out: "Cannot select an application in agent mode." When that happens, run `clerk apps list --json`, and ask the user which `app_id` to link rather than guessing.
+- `clerk link` (no flags) only autolinks when a framework-specific publishable key is already in `.env` / `.env.local` (for example, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`, or `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`). Without it, agent mode errors out: "Cannot select an application in agent mode." When that happens, run `clerk apps list --json`, and ask the user which `app_id` to link rather than guessing.
 - Pass `--json` on `apps list/create`, `users create`, and `doctor` for parseable output.
 - The CLI auto-detects framework env var names (`VITE_CLERK_PUBLISHABLE_KEY` for Vite, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` for Next.js, etc.) and target file (`.env.development.local` > `.env.local` > `.env`).
 

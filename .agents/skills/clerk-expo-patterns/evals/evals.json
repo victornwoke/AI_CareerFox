@@ -62,6 +62,7 @@
         "Imports useUser from @clerk/expo",
         "Destructures user from useUser()",
         "Shows user.fullName or user.firstName",
+        "Renders the user's avatar using user.imageUrl or an avatar component sourced from user.imageUrl",
         "Handles the case where user is null (not yet loaded)",
         "Accesses email via user.primaryEmailAddress?.emailAddress"
       ]

@@ -5,9 +5,19 @@ Clerk stores the active session token in memory by default. In native apps, use 
 ## Built-in Cache (Recommended)
 
 ```tsx
+import { ClerkProvider } from '@clerk/expo'
 import { tokenCache } from '@clerk/expo/token-cache'
+import { Stack } from 'expo-router'
 
-<ClerkProvider publishableKey={key} tokenCache={tokenCache}>
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!
+
+export function RootLayout() {
+  return (
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+      <Stack />
+    </ClerkProvider>
+  )
+}
 ```
 
 Uses `expo-secure-store` with `keychainAccessible: AFTER_FIRST_UNLOCK`.
@@ -46,11 +56,21 @@ const tokenCache: TokenCache = {
 `expo-secure-store` is not available on web. Provide separate implementations:
 
 ```tsx
+import { ClerkProvider } from '@clerk/expo'
 import { Platform } from 'react-native'
 import { tokenCache as nativeCache } from '@clerk/expo/token-cache'
+import { Stack } from 'expo-router'
 
 const cache = Platform.OS === 'web' ? undefined : nativeCache
-<ClerkProvider tokenCache={cache} ... />
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!
+
+export function RootLayout() {
+  return (
+    <ClerkProvider publishableKey={publishableKey} tokenCache={cache}>
+      <Stack />
+    </ClerkProvider>
+  )
+}
 ```
 
 ## CRITICAL

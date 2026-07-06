@@ -96,42 +96,62 @@ function flushBlock() {
     let summary = "";
     let operationId = "";
     let description = "";
-    let params = [];
-    let inDesc = false;
-    let inParams = false;
 
-    for (const bl of blockLines) {
+    function unquote(value) {
+      return value.replace(/^['"]|['"]$/g, "");
+    }
+
+    function readBlockScalar(startIndex, baseIndent) {
+      const parts = [];
+      let endIndex = startIndex;
+
+      for (let i = startIndex + 1; i < blockLines.length; i++) {
+        const line = blockLines[i];
+        const trimmedLine = line.trim();
+        const currentIndent = line.length - line.trimStart().length;
+
+        if (trimmedLine === "") {
+          if (parts.length > 0) parts.push("");
+          endIndex = i;
+          continue;
+        }
+
+        if (currentIndent <= baseIndent) break;
+
+        parts.push(trimmedLine);
+        endIndex = i;
+      }
+
+      return {
+        text: parts.join(" ").replace(/\s+/g, " ").trim(),
+        endIndex,
+      };
+    }
+
+    for (let i = 0; i < blockLines.length; i++) {
+      const bl = blockLines[i];
       const trimmed = bl.trim();
       const indent = bl.length - bl.trimStart().length;
 
       // Only capture operation-level keys (indent 6 = direct children of the method block)
       if (indent === 6) {
         const sumMatch = trimmed.match(/^summary:\s*(.+)/);
-        if (sumMatch) summary = sumMatch[1].replace(/^['"]|['"]$/g, "");
+        if (sumMatch) summary = unquote(sumMatch[1]);
 
         const opMatch = trimmed.match(/^operationId:\s*(.+)/);
-        if (opMatch) operationId = opMatch[1].replace(/^['"]|['"]$/g, "");
+        if (opMatch) operationId = unquote(opMatch[1]);
 
         const descMatch = trimmed.match(/^description:\s*(.+)/);
-        if (descMatch && !inDesc) {
+        if (descMatch) {
           const val = descMatch[1].trim();
           if (val === "|-" || val === "|" || val === ">-" || val === ">") {
-            inDesc = true;
+            const block = readBlockScalar(i, indent);
+            description = block.text;
+            i = block.endIndex;
           } else {
-            description = val.replace(/^['"]|['"]$/g, "");
+            description = unquote(val);
           }
           continue;
-        }
-      }
-
-      if (inDesc) {
-        // Continuation lines of description — grab first non-empty line
-        if (!description && trimmed.length > 0) {
-          description = trimmed;
-        }
-        // Stop when we hit the next operation-level key
-        if (indent === 6 && trimmed.length > 0 && !/^description:/.test(trimmed)) {
-          inDesc = false;
         }
       }
     }

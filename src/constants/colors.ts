@@ -28,6 +28,13 @@ export const colors = {
   onboardingSkipText: "#D9CDFE",
   onboardingSoftWhite: "rgba(255, 255, 255, 0.24)",
   onboardingDotInactive: "rgba(255, 255, 255, 0.34)",
+  authFieldBackground: "#F6F2FF",
+  authBorder: "#E9E0FF",
+  authMuted: "#8F92A8",
+  authDivider: "#EEE7FF",
+  verificationIconBackground: "#E6DEFF",
+  verificationCodeBorder: "#E2DBFF",
+  socialPlaceholder: "#DCD7FF",
 } as const;
 
 export type ColorName = keyof typeof colors;
