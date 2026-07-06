@@ -86,7 +86,7 @@ Include sample data for:
 - Cloud Engineer
 - DevOps Engineer
 
-Include at least 20 interview questions across categories.
+Include at least 30+ interview questions across categories.
 
 ## Rules
 

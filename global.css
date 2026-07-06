@@ -3,3 +3,258 @@
 @import "tailwindcss/utilities.css";
 
 @import "nativewind/theme";
+
+@theme {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary: #6C4EF5;
+  --color-deep-purple: #5B38F6;
+  --color-blue: #4D8BFF;
+  --color-success: #21C16B;
+  --color-warning: #FFC800;
+  --color-energy: #FF8A00;
+  --color-error: #FF4D4F;
+  --color-accent: #FF5DA8;
+  --color-info: #4D8BFF;
+  --color-text-primary: #0D132B;
+  --color-text-secondary: #6B7280;
+  --color-border: #E5E7EB;
+  --color-surface: #F6F7FB;
+  --color-background: #FFFFFF;
+  --color-muted-purple: #EEE9FF;
+  --color-soft-purple: #F2EEFF;
+  --color-soft-blue: #EEF5FF;
+  --color-soft-success: #E9F9F0;
+  --color-soft-warning: #FFF8D6;
+  --color-soft-energy: #FFF0E0;
+  --color-soft-error: #FFECEC;
+  --color-soft-accent: #FFEAF4;
+  --color-pagination-inactive: #DDD7F8;
+  --color-auth-field-background: #F6F2FF;
+  --color-auth-border: #E9E0FF;
+  --color-auth-muted: #8F92A8;
+  --color-auth-divider: #EEE7FF;
+  --color-verification-icon-background: #E6DEFF;
+  --color-verification-code-border: #E2DBFF;
+  --color-social-placeholder: #DCD7FF;
+
+  --gradient-primary: linear-gradient(90deg, #5B38F6 0%, #6C4EF5 52%, #7B55FF 100%);
+  --gradient-soft-surface: linear-gradient(180deg, #FFFFFF 0%, #F6F7FB 100%);
+  --gradient-blue-purple: linear-gradient(135deg, #4D8BFF 0%, #6C4EF5 100%);
+
+  --text-h1: 32px;
+  --text-h1--line-height: 1.2;
+  --text-h2: 24px;
+  --text-h2--line-height: 1.3;
+  --text-h3: 20px;
+  --text-h3--line-height: 1.3;
+  --text-h4: 16px;
+  --text-h4--line-height: 1.4;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 1.6;
+  --text-body: 14px;
+  --text-body--line-height: 1.6;
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 1.6;
+  --text-caption: 11px;
+  --text-caption--line-height: 1.4;
+
+  --radius-card: 24px;
+  --radius-control: 14px;
+  --radius-pill: 999px;
+}
+
+@utility screen-container {
+  flex: 1;
+  background-color: var(--color-background);
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+@utility screen-scroll-content {
+  flex-grow: 1;
+  gap: 24px;
+  padding: 24px;
+  padding-bottom: 32px;
+}
+
+@utility cf-card {
+  border-color: var(--color-border);
+  border-radius: var(--radius-card);
+  border-width: 1px;
+  background-color: var(--color-background);
+  padding: 20px;
+  box-shadow: 0 12px 28px rgba(13, 19, 43, 0.08);
+}
+
+@utility cf-card-soft {
+  border-color: var(--color-border);
+  border-radius: var(--radius-card);
+  border-width: 1px;
+  background-color: var(--color-surface);
+  padding: 20px;
+}
+
+@utility button-primary {
+  min-height: 64px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
+  padding-left: 24px;
+  padding-right: 24px;
+  background-color: var(--color-primary);
+  background-image: var(--gradient-primary);
+  box-shadow: 0 12px 24px rgba(108, 78, 245, 0.22);
+}
+
+@utility button-secondary {
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  border-color: var(--color-border);
+  border-radius: var(--radius-control);
+  border-width: 1px;
+  background-color: var(--color-background);
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+@utility gradient-primary {
+  background-color: var(--color-primary);
+  background-image: var(--gradient-primary);
+}
+
+@utility gradient-surface {
+  background-color: var(--color-surface);
+  background-image: var(--gradient-soft-surface);
+}
+
+@utility gradient-blue-purple {
+  background-color: var(--color-blue);
+  background-image: var(--gradient-blue-purple);
+}
+
+@utility status-badge {
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+@utility status-success {
+  background-color: var(--color-soft-success);
+  color: var(--color-success);
+}
+
+@utility status-warning {
+  background-color: var(--color-soft-warning);
+  color: var(--color-energy);
+}
+
+@utility status-error {
+  background-color: var(--color-soft-error);
+  color: var(--color-error);
+}
+
+@utility status-info {
+  background-color: var(--color-soft-blue);
+  color: var(--color-info);
+}
+
+@utility progress-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-muted-purple);
+}
+
+@utility progress-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-primary);
+  background-image: var(--gradient-primary);
+}
+
+@utility pill-tabs {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface);
+  padding: 4px;
+}
+
+@utility pill-tab {
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+@utility pill-tab-active {
+  background-color: var(--color-background);
+  box-shadow: 0 8px 20px rgba(13, 19, 43, 0.06);
+}
+
+@utility bottom-tab-item {
+  min-height: 52px;
+  min-width: 64px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 18px;
+}
+
+@utility bottom-tab-item-active {
+  background-color: var(--color-soft-purple);
+}
+
+@utility input-field {
+  min-height: 56px;
+  border-color: var(--color-border);
+  border-radius: var(--radius-control);
+  border-width: 1px;
+  background-color: var(--color-background);
+  padding-left: 18px;
+  padding-right: 18px;
+  color: var(--color-text-primary);
+}
+
+@utility text-display-h1 {
+  color: var(--color-text-primary);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 38px;
+}
+
+@utility text-display-h2 {
+  color: var(--color-text-primary);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 31px;
+}
+
+@utility text-display-h3 {
+  color: var(--color-text-primary);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 26px;
+}
+
+@utility text-display-h4 {
+  color: var(--color-text-primary);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+@utility text-body-copy {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+}
