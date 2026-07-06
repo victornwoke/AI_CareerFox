@@ -3,6 +3,7 @@ import type { ImageSourcePropType } from "react-native";
 export const images = {
   careerFoxCoach: require("../../assets/images/mascot/careerfox-coach.png"),
   careerFoxLogoMark: require("../../assets/images/mascot/careerfox-logo-mark.png"),
+  careerFoxOnboardingCard: require("../../assets/images/mascot/careerfox-onboarding-card.png"),
   appIcon: require("../../assets/images/icon.png"),
   splashIcon: require("../../assets/images/splash-icon.png"),
   logoGlow: require("../../assets/images/logo-glow.png"),

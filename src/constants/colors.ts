@@ -24,6 +24,10 @@ export const colors = {
   softError: "#FFECEC",
   softAccent: "#FFEAF4",
   paginationInactive: "#DDD7F8",
+  onboardingMutedText: "#DED4FF",
+  onboardingSkipText: "#D9CDFE",
+  onboardingSoftWhite: "rgba(255, 255, 255, 0.24)",
+  onboardingDotInactive: "rgba(255, 255, 255, 0.34)",
 } as const;
 
 export type ColorName = keyof typeof colors;
