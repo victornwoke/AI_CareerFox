@@ -67,33 +67,45 @@ export async function POST(req: NextRequest) {
     const { id, email_addresses, first_name, last_name } = evt.data
     const email = email_addresses[0]?.email_address
     const name = `${first_name ?? ''} ${last_name ?? ''}`.trim()
-    await db.users.create({ data: { clerkId: id, email, name } })
+    await db.users.upsert({
+      where: { clerkId: id },
+      update: { email, name },
+      create: { clerkId: id, email, name },
+    })
   }
 
   if (evt.type === 'user.updated') {
     const { id, email_addresses, first_name, last_name } = evt.data
     const email = email_addresses[0]?.email_address
     const name = `${first_name ?? ''} ${last_name ?? ''}`.trim()
-    await db.users.update({ where: { clerkId: id }, data: { email, name } })
+    await db.users.upsert({
+      where: { clerkId: id },
+      update: { email, name },
+      create: { clerkId: id, email, name },
+    })
   }
 
   if (evt.type === 'user.deleted') {
     const { id } = evt.data
-    await db.users.delete({ where: { clerkId: id } })
+    await db.users.deleteMany({ where: { clerkId: id } })
   }
 
   if (evt.type === 'organizationMembership.created') {
     const { organization, public_user_data, role } = evt.data
     const orgId = organization.id
     const userId = public_user_data.user_id
-    await db.teamMembers.create({ data: { orgId, userId, role } })
+    await db.teamMembers.upsert({
+      where: { orgId_userId: { orgId, userId } },
+      update: { role },
+      create: { orgId, userId, role },
+    })
   }
 
   if (evt.type === 'organizationMembership.deleted') {
     const { organization, public_user_data } = evt.data
     const orgId = organization.id
     const userId = public_user_data.user_id
-    await db.teamMembers.delete({ where: { orgId_userId: { orgId, userId } } })
+    await db.teamMembers.deleteMany({ where: { orgId, userId } })
   }
 
   return new Response('OK', { status: 200 })

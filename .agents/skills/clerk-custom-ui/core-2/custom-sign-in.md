@@ -117,7 +117,9 @@ try {
 }
 ```
 
-## Complete Example: Email/Password with MFA
+## Complete Example: Email/Password with TOTP MFA
+
+This example is scoped to TOTP second-factor verification. If your sign-in flow supports email codes, phone codes, backup codes, or multiple second-factor options, select the matching strategy before calling `signIn.attemptSecondFactor`.
 
 ```tsx
 'use client'
