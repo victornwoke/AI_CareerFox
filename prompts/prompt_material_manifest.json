@@ -1,0 +1,123 @@
+{
+  "prompt_material_required": [
+    "00_brand_and_colors.png",
+    "01_typography.png",
+    "02_onboarding.png",
+    "03_sign_up.png",
+    "04_sign_in.png",
+    "05_email_verification.png",
+    "06_target_role_setup.png",
+    "07_experience_level_setup.png",
+    "08_home_dashboard.png",
+    "09_progress_dashboard.png",
+    "10_achievements.png",
+    "11_learning_categories.png",
+    "12_interview_practice.png",
+    "13_behavioural_questions.png",
+    "14_lesson_intro.png",
+    "15_voice_answer.png"
+  ],
+  "prompt_to_screen_map": {
+    "00-AGENTS.md": [
+      "prompt_material/00_brand_and_colors.png",
+      "prompt_material/01_typography.png",
+      "prompt_material/02_onboarding.png",
+      "prompt_material/03_sign_up.png",
+      "prompt_material/04_sign_in.png",
+      "prompt_material/05_email_verification.png",
+      "prompt_material/06_target_role_setup.png",
+      "prompt_material/07_experience_level_setup.png",
+      "prompt_material/08_home_dashboard.png",
+      "prompt_material/09_progress_dashboard.png",
+      "prompt_material/10_achievements.png",
+      "prompt_material/11_learning_categories.png",
+      "prompt_material/12_interview_practice.png",
+      "prompt_material/13_behavioural_questions.png",
+      "prompt_material/14_lesson_intro.png",
+      "prompt_material/15_voice_answer.png"
+    ],
+    "01-nativewind.md": [],
+    "02-design-theme.md": [
+      "prompt_material/00_brand_and_colors.png",
+      "prompt_material/01_typography.png"
+    ],
+    "03-onboarding-ui.md": [
+      "prompt_material/02_onboarding.png"
+    ],
+    "04-authentication-ui.md": [
+      "prompt_material/03_sign_up.png",
+      "prompt_material/04_sign_in.png",
+      "prompt_material/05_email_verification.png"
+    ],
+    "05-clerk.md": [
+      "prompt_material/03_sign_up.png",
+      "prompt_material/04_sign_in.png",
+      "prompt_material/05_email_verification.png"
+    ],
+    "06-career-content-system.md": [],
+    "07-goal-setup-ui.md": [
+      "prompt_material/06_target_role_setup.png",
+      "prompt_material/07_experience_level_setup.png"
+    ],
+    "08-zustand.md": [],
+    "09-bottom-tab-nav.md": [
+      "prompt_material/08_home_dashboard.png",
+      "prompt_material/09_progress_dashboard.png",
+      "prompt_material/10_achievements.png",
+      "prompt_material/11_learning_categories.png",
+      "prompt_material/12_interview_practice.png",
+      "prompt_material/15_voice_answer.png"
+    ],
+    "10-home-ui.md": [
+      "prompt_material/08_home_dashboard.png",
+      "prompt_material/09_progress_dashboard.png",
+      "prompt_material/10_achievements.png"
+    ],
+    "11-learning-categories-ui.md": [
+      "prompt_material/11_learning_categories.png"
+    ],
+    "12-interview-practice-ui.md": [
+      "prompt_material/12_interview_practice.png"
+    ],
+    "13-lesson-flow-ui.md": [
+      "prompt_material/13_behavioural_questions.png",
+      "prompt_material/14_lesson_intro.png"
+    ],
+    "14-voice-answer-ui.md": [
+      "prompt_material/15_voice_answer.png"
+    ],
+    "15-cv-coach-ui.md": [
+      "prompt_material/08_home_dashboard.png",
+      "prompt_material/09_progress_dashboard.png"
+    ],
+    "16-application-tracker-ui.md": [
+      "prompt_material/08_home_dashboard.png",
+      "prompt_material/09_progress_dashboard.png"
+    ],
+    "17-ai-feedback-backend.md": [
+      "prompt_material/15_voice_answer.png"
+    ],
+    "18-posthog-analytics.md": [],
+    "19-revenuecat-iap.md": [
+      "prompt_material/08_home_dashboard.png"
+    ],
+    "20-production-readiness.md": [
+      "prompt_material/00_brand_and_colors.png",
+      "prompt_material/01_typography.png",
+      "prompt_material/02_onboarding.png",
+      "prompt_material/03_sign_up.png",
+      "prompt_material/04_sign_in.png",
+      "prompt_material/05_email_verification.png",
+      "prompt_material/06_target_role_setup.png",
+      "prompt_material/07_experience_level_setup.png",
+      "prompt_material/08_home_dashboard.png",
+      "prompt_material/09_progress_dashboard.png",
+      "prompt_material/10_achievements.png",
+      "prompt_material/11_learning_categories.png",
+      "prompt_material/12_interview_practice.png",
+      "prompt_material/13_behavioural_questions.png",
+      "prompt_material/14_lesson_intro.png",
+      "prompt_material/15_voice_answer.png"
+    ]
+  }
+}
