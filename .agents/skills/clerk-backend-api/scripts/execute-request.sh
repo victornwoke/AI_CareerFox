@@ -11,15 +11,46 @@
 
 set -euo pipefail
 
+_load_env_file() {
+  local _line _key _value
+
+  while IFS= read -r _line || [[ -n "$_line" ]]; do
+    _line="${_line#"${_line%%[![:space:]]*}"}"
+    [[ -z "$_line" || "${_line:0:1}" == "#" || "$_line" != *"=" ]] && continue
+
+    if [[ "$_line" == export[[:space:]]* ]]; then
+      _line="${_line#export}"
+      _line="${_line#"${_line%%[![:space:]]*}"}"
+    fi
+
+    _key="${_line%%=*}"
+    _value="${_line#*=}"
+    _key="${_key%"${_key##*[![:space:]]}"}"
+    _value="${_value#"${_value%%[![:space:]]*}"}"
+    _value="${_value%"${_value##*[![:space:]]}"}"
+
+    [[ "$_key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+
+    if [[ "${#_value}" -ge 2 ]]; then
+      if [[ "${_value:0:1}" == "\"" && "${_value: -1}" == "\"" ]]; then
+        _value="${_value:1:${#_value}-2}"
+      elif [[ "${_value:0:1}" == "'" && "${_value: -1}" == "'" ]]; then
+        _value="${_value:1:${#_value}-2}"
+      fi
+    fi
+
+    printf -v "$_key" '%s' "$_value"
+    export "$_key"
+  done < "$1"
+}
+
 # Walk up from $PWD to find .env/.env.local (mirrors Clerk CLI behavior).
 # Stops at the first directory that provides CLERK_SECRET_KEY.
 _dir="$PWD"
 while true; do
   for _envfile in "$_dir/.env" "$_dir/.env.local"; do
     if [[ -f "$_envfile" ]]; then
-      set -a
-      source "$_envfile"
-      set +a
+      _load_env_file "$_envfile"
     fi
   done
   [[ -n "${CLERK_SECRET_KEY:-}" ]] && break
@@ -27,6 +58,7 @@ while true; do
   [[ "$_parent" == "$_dir" ]] && break
   _dir="$_parent"
 done
+unset -f _load_env_file
 unset _dir _parent _envfile
 
 # Parse --admin flag

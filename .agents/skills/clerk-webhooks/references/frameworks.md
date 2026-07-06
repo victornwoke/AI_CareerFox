@@ -195,7 +195,7 @@ export const ServerRoute = createServerFileRoute().methods({
 })
 ```
 
-When tunneling via ngrok in dev, allow the host in `app.config.ts`:
+When tunneling via ngrok in dev, allow the host in `vite.config.ts`:
 
 ```typescript
 import { defineConfig } from 'vite'

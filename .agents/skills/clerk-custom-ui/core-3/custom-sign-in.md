@@ -22,7 +22,7 @@ const { signIn, errors, fetchStatus } = useSignIn()
 
 ```typescript
 const { error } = await signIn.password({
-  identifier: 'user@example.com',
+  emailAddress: 'user@example.com',
   password: 'securePassword123',
 })
 ```
@@ -166,7 +166,7 @@ All methods return `Promise<{ error: ClerkError | null }>`. Errors are also avai
 const { signIn, errors } = useSignIn()
 
 // Field-level errors
-errors?.fields?.identifier // { code, message, longMessage? }
+errors?.fields?.emailAddress // { code, message, longMessage? }
 errors?.fields?.password   // { code, message, longMessage? }
 errors?.fields?.code       // { code, message, longMessage? }
 
@@ -200,7 +200,8 @@ export default function Page() {
       password,
     })
 
-    // If you're using the authenticator app strategy, remove this check.
+    // Phone-code MFA only: skip this for TOTP or backup-code flows.
+    // TOTP and backup codes should be verified with their own mfa methods.
     if (signIn.status === 'needs_second_factor') {
       await signIn.mfa.sendPhoneCode()
     }
@@ -290,7 +291,7 @@ export default function Page() {
         <div>
           <label htmlFor="email">Enter email address</label>
           <input id="email" name="email" type="email" />
-          {errors.fields.identifier && <p>{errors.fields.identifier.message}</p>}
+          {errors.fields.emailAddress && <p>{errors.fields.emailAddress.message}</p>}
         </div>
         <div>
           <label htmlFor="password">Enter password</label>

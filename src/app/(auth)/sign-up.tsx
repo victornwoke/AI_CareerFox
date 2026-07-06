@@ -47,7 +47,10 @@ function AuthField({
       />
       <TextInput
         autoCapitalize={
-          textContentType === "emailAddress" ? "none" : "sentences"
+          textContentType === "emailAddress" ||
+          textContentType === "newPassword"
+            ? "none"
+            : "sentences"
         }
         className="flex-1 text-[16px] font-semibold text-text-primary"
         inputMode={textContentType === "emailAddress" ? "email" : "text"}

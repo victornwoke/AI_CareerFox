@@ -6,20 +6,25 @@ Store the Expo push token against the Clerk user using `publicMetadata` or your 
 
 ```tsx
 import { useUser } from '@clerk/expo'
+import Constants from 'expo-constants'
 import * as Notifications from 'expo-notifications'
 import { useEffect } from 'react'
 
 export function PushTokenRegistrar() {
   const { user, isLoaded } = useUser()
+  const existingToken = user?.unsafeMetadata?.expoPushToken
 
   useEffect(() => {
-    if (!isLoaded || !user) return
+    if (!isLoaded || !user?.id || existingToken) return
 
     async function register() {
       const { status } = await Notifications.requestPermissionsAsync()
       if (status !== 'granted') return
 
-      const token = (await Notifications.getExpoPushTokenAsync()).data
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId
+      if (!projectId) return
+
+      const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data
 
       await user.update({
         unsafeMetadata: {
@@ -30,7 +35,7 @@ export function PushTokenRegistrar() {
     }
 
     register()
-  }, [isLoaded, user])
+  }, [existingToken, isLoaded, user?.id])
 
   return null
 }
@@ -46,7 +51,7 @@ import { clerkClient } from '@clerk/nextjs/server'
 async function sendNotification(userId: string, title: string, body: string) {
   const client = await clerkClient()
   const user = await client.users.getUser(userId)
-  const token = user.unsafeMetadata?.expoPushToken as string | undefined
+  const token = user.publicMetadata?.expoPushToken as string | undefined
 
   if (!token) return
 

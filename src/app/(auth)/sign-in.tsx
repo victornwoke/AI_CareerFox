@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { VerificationModal } from "@/components/auth/VerificationModal";
 import { colors } from "@/constants/colors";
 import { images } from "@/constants/images";
+import { radii, spacing } from "@/constants/theme";
 
 type AuthFieldProps = {
   icon: string;
@@ -39,11 +40,20 @@ function AuthField({
   onToggleSecure,
 }: AuthFieldProps) {
   return (
-    <View className="h-[56px] flex-row items-center gap-3 rounded-[18px] border border-[#E9E0FF] bg-[#F6F2FF] px-5">
+    <View
+      className="input-field flex-row items-center gap-3"
+      style={{
+        backgroundColor: colors.surface,
+        borderColor: colors.border,
+        borderRadius: radii.lg,
+        height: 56,
+        paddingHorizontal: spacing.card,
+      }}
+    >
       <Image
         contentFit="contain"
         source={`sf:${icon}`}
-        style={{ height: 22, tintColor: "#8F92A8", width: 22 }}
+        style={{ height: 22, tintColor: colors.textSecondary, width: 22 }}
       />
       <TextInput
         autoCapitalize="none"
@@ -54,7 +64,7 @@ function AuthField({
         }
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#1B1A31"
+        placeholderTextColor={colors.textSecondary}
         secureTextEntry={secureTextEntry}
         textContentType={textContentType}
         value={value}
@@ -69,7 +79,7 @@ function AuthField({
           <Image
             contentFit="contain"
             source="sf:eye"
-            style={{ height: 22, tintColor: "#8F92A8", width: 22 }}
+            style={{ height: 22, tintColor: colors.textSecondary, width: 22 }}
           />
         </Pressable>
       ) : null}

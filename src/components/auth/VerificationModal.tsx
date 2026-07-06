@@ -87,7 +87,12 @@ export function VerificationModal({
   };
 
   return (
-    <Modal animationType="slide" presentationStyle="fullScreen" visible={visible}>
+    <Modal
+      animationType="slide"
+      onRequestClose={closeModal}
+      presentationStyle="fullScreen"
+      visible={visible}
+    >
       <KeyboardAvoidingView
         behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined}
         className="flex-1 bg-background"

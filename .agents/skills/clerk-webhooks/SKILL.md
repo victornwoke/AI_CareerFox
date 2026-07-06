@@ -73,7 +73,8 @@ export async function POST(req: NextRequest) {
   if (evt.type === 'user.updated') {
     const { id, email_addresses, first_name, last_name } = evt.data
     const email = email_addresses[0]?.email_address
-    await db.users.update({ where: { clerkId: id }, data: { email, first_name, last_name } })
+    const name = `${first_name ?? ''} ${last_name ?? ''}`.trim()
+    await db.users.update({ where: { clerkId: id }, data: { email, name } })
   }
 
   if (evt.type === 'user.deleted') {
@@ -129,24 +130,36 @@ export async function POST(req: NextRequest) {
     const name = `${first_name ?? ''} ${last_name ?? ''}`.trim()
 
     // Step 4: Call Resend API to send welcome email
-    await resend.emails.send({
-      from: 'noreply@yourdomain.com',
-      to: email,
-      subject: 'Welcome!',
-      html: `<p>Hi ${name}, welcome to our app!</p>`,
-    })
+    try {
+      await resend.emails.send({
+        from: 'noreply@yourdomain.com',
+        to: email,
+        subject: 'Welcome!',
+        html: `<p>Hi ${name}, welcome to our app!</p>`,
+      })
+    } catch (err) {
+      console.error('Failed to send welcome email:', err)
+    }
 
     // Step 5: Post notification to Slack channel
-    await fetch(process.env.SLACK_WEBHOOK_URL!, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: `New user signed up: ${name} (${email})`,
-      }),
-    })
+    try {
+      const slackResponse = await fetch(process.env.SLACK_WEBHOOK_URL!, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: `New user signed up: ${name} (${email})`,
+        }),
+      })
+
+      if (!slackResponse.ok) {
+        console.error('Failed to post Slack notification:', await slackResponse.text())
+      }
+    } catch (err) {
+      console.error('Failed to post Slack notification:', err)
+    }
   }
 
-  // Always return 200 to acknowledge receipt
+  // After verification, side effects are best effort; always return 200 to acknowledge receipt
   return new Response('OK', { status: 200 })
 }
 ```
