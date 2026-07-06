@@ -1,35 +1,3 @@
-## Visual Reference Files
-
-No dedicated screen reference is required for this prompt.
-
-Still follow:
-
-- `AGENTS.md`
-- the existing app design system
-- the Figma source link if available
-
-Read AGENTS.md first and follow it strictly.
-
-Create the hardcoded CareerFox AI content system using TypeScript data.
-
-## Files
-
-Create:
-
-```txt
-types/career.ts
-data/roles.ts
-data/experienceLevels.ts
-data/missions.ts
-data/interviewCategories.ts
-data/interviewQuestions.ts
-data/cvTips.ts
-data/achievements.ts
-```
-
-## Required types
-
-```ts
 export type TargetRole = {
   id: string;
   title: string;
@@ -71,26 +39,17 @@ export type Achievement = {
   icon: string;
   unlocked: boolean;
 };
-```
 
-## Sample data
+export type InterviewCategory = {
+  id: InterviewQuestion["category"];
+  title: string;
+  description: string;
+};
 
-Include sample data for:
-
-- Software Engineer
-- Product Manager
-- Data Analyst
-- UX Designer
-- Marketing Manager
-- Business Analyst
-- Cloud Engineer
-- DevOps Engineer
-
-Include at least 30+ interview questions across categories.
-
-## Rules
-
-- Keep data typed.
-- Avoid `any`.
-- Do not add a database.
-- Keep content easy to extend.
+export type CvTip = {
+  id: string;
+  title: string;
+  category: "impact" | "format" | "keywords" | "experience" | "proofreading";
+  description: string;
+  example: string;
+};

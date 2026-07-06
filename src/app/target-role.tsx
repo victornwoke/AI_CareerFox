@@ -1,7 +1,7 @@
 import { useAuth } from "@clerk/expo";
 import { Image } from "expo-image";
-import { Redirect, type Href } from "expo-router";
-import { useState } from "react";
+import { Redirect, type Href, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -15,6 +15,7 @@ type RoleOption = {
 };
 
 const signInHref = "/sign-in" as Href;
+const experienceLevelHref = "/experience-level";
 
 const roleOptions: RoleOption[] = [
   {
@@ -69,6 +70,7 @@ const roleOptions: RoleOption[] = [
 
 export default function TargetRoleScreen() {
   const { isLoaded, isSignedIn } = useAuth();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -101,6 +103,13 @@ export default function TargetRoleScreen() {
     isCompactHeight ? 98 : 106,
     Math.max(82, availableRoleCardHeight),
   );
+  const handleContinue = useCallback(() => {
+    if (selectedRoles.length === 0) {
+      return;
+    }
+
+    router.push(experienceLevelHref);
+  }, [router, selectedRoles]);
 
   if (!isLoaded) {
     return null;
@@ -228,6 +237,7 @@ export default function TargetRoleScreen() {
           accessibilityRole="button"
           className="items-center justify-center rounded-[18px]"
           disabled={selectedRoles.length === 0}
+          onPress={handleContinue}
           style={{
             backgroundColor: colors.primary,
             boxShadow: "0 18px 34px rgba(108, 78, 245, 0.18)",
