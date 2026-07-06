@@ -1,4 +1,5 @@
-import { Link } from "expo-router";
+import { useSignUp } from "@clerk/expo";
+import { Link, useRouter, type Href } from "expo-router";
 import { Image } from "expo-image";
 import { useState } from "react";
 import {
@@ -16,6 +17,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { VerificationModal } from "@/components/auth/VerificationModal";
 import { colors } from "@/constants/colors";
 import { images } from "@/constants/images";
+import {
+  useSocialAuth,
+  type SocialAuthProvider,
+} from "@/hooks/useSocialAuth";
+import { getClerkErrorMessage } from "@/lib/clerkErrors";
 
 type AuthFieldProps = {
   icon: string;
@@ -27,6 +33,18 @@ type AuthFieldProps = {
   value: string;
   onToggleSecure?: () => void;
 };
+
+const goalSetupHref = "/target-role" as Href;
+
+function getNameParts(fullName: string) {
+  const [firstName = "", ...rest] = fullName.trim().split(/\s+/);
+  const lastName = rest.join(" ");
+
+  return {
+    firstName,
+    lastName: lastName || undefined,
+  };
+}
 
 function AuthField({
   icon,
@@ -83,6 +101,9 @@ function AuthField({
 }
 
 export default function SignUpScreen() {
+  const router = useRouter();
+  const { fetchStatus, signUp } = useSignUp();
+  const { startSocialAuth } = useSocialAuth();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [fullName, setFullName] = useState("");
@@ -91,11 +112,35 @@ export default function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
   const [isConfirmPasswordHidden, setIsConfirmPasswordHidden] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isVerificationVisible, setIsVerificationVisible] = useState(false);
+  const [socialLoadingProvider, setSocialLoadingProvider] =
+    useState<SocialAuthProvider | null>(null);
+  const isLoading = fetchStatus === "fetching";
+  const isAuthLoading = isLoading || socialLoadingProvider !== null;
 
-  const handleSubmit = () => {
+  const completeSignUp = async () => {
+    let didNavigate = false;
+
+    const { error: finalizeError } = await signUp.finalize({
+      navigate: () => {
+        didNavigate = true;
+        router.replace(goalSetupHref);
+      },
+    });
+
+    if (finalizeError) {
+      return getClerkErrorMessage(finalizeError);
+    }
+
+    if (!didNavigate) {
+      router.replace(goalSetupHref);
+    }
+
+    return undefined;
+  };
+
+  const handleSubmit = async () => {
     setError("");
 
     if (
@@ -118,12 +163,93 @@ export default function SignUpScreen() {
       return;
     }
 
-    setIsLoading(true);
+    const { firstName, lastName } = getNameParts(fullName);
 
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const { error: signUpError } = await signUp.password({
+        emailAddress: email.trim(),
+        firstName,
+        lastName,
+        password,
+      });
+
+      if (signUpError) {
+        setError(getClerkErrorMessage(signUpError));
+        return;
+      }
+
+      if (signUp.isTransferable) {
+        setError("An account already exists for this email. Please sign in.");
+        return;
+      }
+
+      const { error: verificationError } =
+        await signUp.verifications.sendEmailCode();
+
+      if (verificationError) {
+        setError(getClerkErrorMessage(verificationError));
+        return;
+      }
+
       setIsVerificationVisible(true);
-    }, 550);
+    } catch (requestError) {
+      setError(getClerkErrorMessage(requestError));
+      return;
+    }
+  };
+
+  const verifyEmailCode = async (code: string) => {
+    try {
+      const { error: verificationError } =
+        await signUp.verifications.verifyEmailCode({ code });
+
+      if (verificationError) {
+        return getClerkErrorMessage(verificationError);
+      }
+
+      if (signUp.status !== "complete") {
+        return "We could not finish verification. Please check the code and try again.";
+      }
+
+      const finalizeError = await completeSignUp();
+
+      if (finalizeError) {
+        return finalizeError;
+      }
+
+      setIsVerificationVisible(false);
+
+      return undefined;
+    } catch (requestError) {
+      return getClerkErrorMessage(requestError);
+    }
+  };
+
+  const resendEmailCode = async () => {
+    try {
+      const { error: resendError } = await signUp.verifications.sendEmailCode();
+
+      if (resendError) {
+        return getClerkErrorMessage(resendError);
+      }
+
+      return undefined;
+    } catch (requestError) {
+      return getClerkErrorMessage(requestError);
+    }
+  };
+
+  const handleSocialAuth = async (provider: SocialAuthProvider) => {
+    setError("");
+    setSocialLoadingProvider(provider);
+
+    const nextError = await startSocialAuth(provider);
+
+    if (nextError) {
+      setError(nextError);
+    }
+
+    setSocialLoadingProvider(null);
   };
 
   return (
@@ -223,12 +349,12 @@ export default function SignUpScreen() {
             <Pressable
               accessibilityRole="button"
               className="mt-2 h-[56px] items-center justify-center rounded-[16px]"
-              disabled={isLoading}
-              onPress={handleSubmit}
+              disabled={isAuthLoading}
+              onPress={() => void handleSubmit()}
               style={{
                 backgroundColor: colors.primary,
                 boxShadow: "0 16px 30px rgba(108, 78, 245, 0.22)",
-                opacity: isLoading ? 0.84 : 1,
+                opacity: isAuthLoading ? 0.84 : 1,
               }}
             >
               {isLoading ? (
@@ -249,16 +375,23 @@ export default function SignUpScreen() {
             </View>
 
             <View className="flex-row gap-3">
-              {["Google", "LinkedIn"].map((provider) => (
+              {(["Google", "LinkedIn"] satisfies SocialAuthProvider[]).map((provider) => (
                 <Pressable
                   accessibilityRole="button"
                   className="h-[46px] flex-1 flex-row items-center justify-center gap-2 rounded-[18px] border border-[#E9E0FF] bg-white"
+                  disabled={isAuthLoading}
                   key={provider}
+                  onPress={() => void handleSocialAuth(provider)}
+                  style={{ opacity: isAuthLoading ? 0.7 : 1 }}
                 >
                   <View className="h-5 w-5 rounded-full bg-[#DCD7FF]" />
-                  <Text className="text-[15px] font-bold text-text-primary">
-                    {provider}
-                  </Text>
+                  {socialLoadingProvider === provider ? (
+                    <ActivityIndicator color={colors.primary} size="small" />
+                  ) : (
+                    <Text className="text-[15px] font-bold text-text-primary">
+                      {provider}
+                    </Text>
+                  )}
                 </Pressable>
               ))}
             </View>
@@ -278,6 +411,8 @@ export default function SignUpScreen() {
       <VerificationModal
         email={email || "alex@example.com"}
         onClose={() => setIsVerificationVisible(false)}
+        onResendCode={resendEmailCode}
+        onVerifyCode={verifyEmailCode}
         visible={isVerificationVisible}
       />
     </KeyboardAvoidingView>
