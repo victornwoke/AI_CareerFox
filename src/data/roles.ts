@@ -6,6 +6,9 @@ export const targetRoles: TargetRole[] = [
     title: "Software Engineer",
     category: "tech",
     description: "Builds reliable applications, services, and product features with clean code and strong engineering habits.",
+    icon: "chevron.left.forwardslash.chevron.right",
+    iconBackground: "#EEE9FF",
+    iconColor: "#6C4EF5",
     popularKeywords: ["React", "TypeScript", "APIs", "testing", "system design", "Git"],
   },
   {
@@ -13,6 +16,9 @@ export const targetRoles: TargetRole[] = [
     title: "Product Manager",
     category: "product",
     description: "Guides product strategy, prioritizes customer problems, and aligns teams around measurable outcomes.",
+    icon: "target",
+    iconBackground: "#FFEAF4",
+    iconColor: "#FF5DA8",
     popularKeywords: ["roadmaps", "discovery", "prioritization", "metrics", "stakeholders", "experiments"],
   },
   {
@@ -20,6 +26,9 @@ export const targetRoles: TargetRole[] = [
     title: "Data Analyst",
     category: "data",
     description: "Turns data into clear insights, dashboards, and recommendations that help teams make better decisions.",
+    icon: "chart.bar.xaxis",
+    iconBackground: "#EEF5FF",
+    iconColor: "#4D8BFF",
     popularKeywords: ["SQL", "dashboards", "Excel", "Python", "statistics", "storytelling"],
   },
   {
@@ -27,6 +36,9 @@ export const targetRoles: TargetRole[] = [
     title: "UX Designer",
     category: "design",
     description: "Designs intuitive product experiences through user research, flows, prototypes, and usability testing.",
+    icon: "paintpalette",
+    iconBackground: "#FFF8D6",
+    iconColor: "#FF8A00",
     popularKeywords: ["Figma", "wireframes", "prototyping", "user research", "journey maps", "accessibility"],
   },
   {
@@ -34,6 +46,9 @@ export const targetRoles: TargetRole[] = [
     title: "Marketing Manager",
     category: "marketing",
     description: "Plans campaigns, sharpens positioning, and grows demand through creative and data-informed marketing.",
+    icon: "megaphone",
+    iconBackground: "#FFF0E0",
+    iconColor: "#FF8A00",
     popularKeywords: ["campaigns", "SEO", "content", "analytics", "positioning", "conversion"],
   },
   {
@@ -41,6 +56,9 @@ export const targetRoles: TargetRole[] = [
     title: "Business Analyst",
     category: "business",
     description: "Clarifies business needs, maps processes, and translates stakeholder goals into practical requirements.",
+    icon: "briefcase",
+    iconBackground: "#EEE9FF",
+    iconColor: "#6C4EF5",
     popularKeywords: ["requirements", "process mapping", "stakeholders", "UAT", "documentation", "KPIs"],
   },
   {
@@ -48,6 +66,9 @@ export const targetRoles: TargetRole[] = [
     title: "Cloud Engineer",
     category: "tech",
     description: "Designs, deploys, and operates secure cloud infrastructure for scalable production systems.",
+    icon: "cloud",
+    iconBackground: "#EEF5FF",
+    iconColor: "#4D8BFF",
     popularKeywords: ["Azure", "AWS", "IaC", "Kubernetes", "networking", "monitoring"],
   },
   {
@@ -55,6 +76,9 @@ export const targetRoles: TargetRole[] = [
     title: "DevOps Engineer",
     category: "tech",
     description: "Improves delivery pipelines, reliability, observability, and operational practices across engineering teams.",
+    icon: "waveform.path.ecg",
+    iconBackground: "#E9F9F0",
+    iconColor: "#21C16B",
     popularKeywords: ["CI/CD", "Docker", "Terraform", "SRE", "observability", "automation"],
   },
 ];

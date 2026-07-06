@@ -14,9 +14,9 @@ User Prompt: $ARGUMENTS
 
 Before ANY POST / PATCH / PUT / DELETE, you MUST do ALL of the following in your response:
 
-1. **Check CLERK_SECRET_KEY** — verify it is set:
+1. **Check CLERK_SECRET_KEY** — verify it is set without printing any token material:
    ```bash
-   echo $CLERK_SECRET_KEY | head -c 10
+   test -n "${CLERK_SECRET_KEY:-}" && echo "CLERK_SECRET_KEY is set"
    ```
    If empty, stop and ask the user. Do not proceed without a valid key.
 

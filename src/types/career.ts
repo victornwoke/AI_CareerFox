@@ -3,6 +3,9 @@ export type TargetRole = {
   title: string;
   category: "tech" | "product" | "data" | "design" | "business" | "marketing";
   description: string;
+  icon: string;
+  iconBackground: string;
+  iconColor: string;
   popularKeywords: string[];
 };
 

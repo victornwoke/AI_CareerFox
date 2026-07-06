@@ -101,12 +101,13 @@ if [[ "$ADMIN" == false ]]; then
   esac
 fi
 
-# Base URL: use CLERK_REST_API_URL if set, otherwise default to production
-BASE_URL="${CLERK_REST_API_URL:-https://api.clerk.com}"
+# Base URL: use CLERK_BACKEND_API_URL if set, otherwise default to production
+BASE_URL="${CLERK_BACKEND_API_URL:-https://api.clerk.com}"
 
 # Build curl command
 CURL_ARGS=(
   -s
+  -f
   -X "$METHOD_UPPER"
   "${BASE_URL}/v1${PATH_ARG}"
   -H "Authorization: Bearer ${CLERK_SECRET_KEY:?CLERK_SECRET_KEY is not set}"
