@@ -41,3 +41,11 @@ example
 # generated native folders
 /ios
 /android
+
+prompts/
+prompt_materials/
+
+.env
+
+00-PRD.md
+00-TOOLS-AND-DOCS.md
