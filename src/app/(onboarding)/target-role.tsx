@@ -1,5 +1,5 @@
 import { useAuth } from "@clerk/expo";
-import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { Redirect, type Href, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -12,7 +12,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/constants/colors";
+import { SymbolIcon } from "@/components/ui/SymbolIcon";
+import { colors, gradients } from "@/constants/colors";
 import { targetRoles } from "@/data/roles";
 import { useGoalSetupStore } from "@/store/goalSetupStore";
 
@@ -85,11 +86,11 @@ export default function TargetRoleScreen() {
 
         <View className="mt-8 flex-row items-center gap-3">
           <View className="h-16 w-16 items-center justify-center rounded-full bg-[#EEE9FF]">
-            <Image
+            <SymbolIcon
               accessibilityLabel="Target role"
-              contentFit="contain"
-              source="sf:target"
-              style={{ height: 30, tintColor: colors.primary, width: 30 }}
+              color={colors.primary}
+              name="target"
+              size={30}
             />
           </View>
           <View className="flex-1">
@@ -103,11 +104,11 @@ export default function TargetRoleScreen() {
         </View>
 
         <View className="mt-6 h-[58px] flex-row items-center gap-3 rounded-[18px] border border-[#E9E0FF] bg-[#F6F2FF] px-5">
-          <Image
+          <SymbolIcon
             accessibilityLabel="Search"
-            contentFit="contain"
-            source="sf:magnifyingglass"
-            style={{ height: 22, tintColor: "#8F92A8", width: 22 }}
+            color="#8F92A8"
+            name="magnifyingglass"
+            size={22}
           />
           <TextInput
             accessibilityLabel="Search target roles"
@@ -157,15 +158,11 @@ export default function TargetRoleScreen() {
                   className="h-14 w-14 items-center justify-center rounded-[22px]"
                   style={{ backgroundColor: role.iconBackground }}
                 >
-                  <Image
+                  <SymbolIcon
                     accessibilityLabel={role.title}
-                    contentFit="contain"
-                    source={`sf:${role.icon}`}
-                    style={{
-                      height: 26,
-                      tintColor: role.iconColor,
-                      width: 26,
-                    }}
+                    color={role.iconColor}
+                    name={role.icon}
+                    size={26}
                   />
                 </View>
 
@@ -179,24 +176,20 @@ export default function TargetRoleScreen() {
                 </View>
 
                 {isSelected ? (
-                  <Image
+                  <SymbolIcon
                     accessibilityLabel="Selected"
-                    contentFit="contain"
-                    source="sf:checkmark.circle.fill"
-                    style={{
-                      height: 24,
-                      marginRight: 8,
-                      tintColor: colors.primary,
-                      width: 24,
-                    }}
+                    color={colors.primary}
+                    name="checkmark.circle.fill"
+                    size={24}
+                    style={{ marginRight: 8 }}
                   />
                 ) : null}
 
-                <Image
+                <SymbolIcon
                   accessibilityLabel="Open role"
-                  contentFit="contain"
-                  source="sf:chevron.right"
-                  style={{ height: 20, tintColor: "#B8A5E8", width: 20 }}
+                  color="#B8A5E8"
+                  name="chevron.right"
+                  size={20}
                 />
               </Pressable>
             );
@@ -205,17 +198,31 @@ export default function TargetRoleScreen() {
 
         <Pressable
           accessibilityRole="button"
-          className="mt-7 min-h-16 items-center justify-center rounded-[18px] bg-primary px-6"
+          className="mt-7 min-h-16 items-center justify-center rounded-[18px]"
           disabled={!selectedRoleId}
           onPress={handleContinue}
           style={{
             boxShadow: "0 12px 24px rgba(108, 78, 245, 0.22)",
+            overflow: "hidden",
             opacity: selectedRoleId ? 1 : 0.72,
           }}
         >
-          <Text className="text-[17px] font-bold leading-[24px] text-white">
-            Continue
-          </Text>
+          <LinearGradient
+            colors={gradients.primary}
+            end={{ x: 1, y: 0.5 }}
+            start={{ x: 0, y: 0.5 }}
+            style={{
+              alignItems: "center",
+              alignSelf: "stretch",
+              flex: 1,
+              justifyContent: "center",
+              minHeight: 64,
+            }}
+          >
+            <Text className="text-[17px] font-bold leading-[24px] text-white">
+              Continue
+            </Text>
+          </LinearGradient>
         </Pressable>
       </ScrollView>
     </View>

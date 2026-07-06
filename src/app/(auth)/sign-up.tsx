@@ -1,12 +1,14 @@
 import { useSignUp } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   useWindowDimensions,
   View,
@@ -15,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AuthField } from "@/components/auth/AuthField";
 import { VerificationModal } from "@/components/auth/VerificationModal";
-import { colors } from "@/constants/colors";
+import { colors, gradients } from "@/constants/colors";
 import { images } from "@/constants/images";
 import { componentStyles } from "@/constants/theme";
 import {
@@ -284,20 +286,26 @@ export default function SignUpScreen() {
 
             <Pressable
               accessibilityRole="button"
-              className="mt-2 items-center justify-center"
               disabled={isAuthLoading}
               onPress={() => void handleSubmit()}
-              style={[componentStyles.primaryButton, {
+              style={[componentStyles.primaryButton, styles.submitButton, {
                 opacity: isAuthLoading ? 0.84 : 1,
               }]}
             >
-              {isLoading ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <Text className="text-[17px] font-bold text-white">
-                  Create Account
-                </Text>
-              )}
+              <LinearGradient
+                colors={gradients.primary}
+                end={{ x: 1, y: 0.5 }}
+                start={{ x: 0, y: 0.5 }}
+                style={styles.submitGradient}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text className="text-[17px] font-bold text-white">
+                    Create Account
+                  </Text>
+                )}
+              </LinearGradient>
             </Pressable>
 
             <View className="my-5 flex-row items-center gap-4">
@@ -312,13 +320,14 @@ export default function SignUpScreen() {
               {(["Google", "LinkedIn"] satisfies SocialAuthProvider[]).map((provider) => (
                 <Pressable
                   accessibilityRole="button"
-                  className="h-[46px] flex-1 flex-row items-center justify-center gap-2 rounded-[18px] border border-auth-border bg-white"
                   disabled={isAuthLoading}
                   key={provider}
                   onPress={() => void handleSocialAuth(provider)}
-                  style={{ opacity: isAuthLoading ? 0.7 : 1 }}
+                  style={[styles.socialButton, {
+                    opacity: isAuthLoading ? 0.7 : 1,
+                  }]}
                 >
-                  <View className="h-5 w-5 rounded-full bg-social-placeholder" />
+                  <View style={styles.socialPlaceholder} />
                   {socialLoadingProvider === provider ? (
                     <ActivityIndicator color={colors.primary} size="small" />
                   ) : (
@@ -352,3 +361,35 @@ export default function SignUpScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  socialButton: {
+    alignItems: "center",
+    backgroundColor: colors.white,
+    borderColor: colors.authBorder,
+    borderRadius: 18,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: "row",
+    gap: 8,
+    height: 46,
+    justifyContent: "center",
+  },
+  socialPlaceholder: {
+    backgroundColor: colors.socialPlaceholder,
+    borderRadius: 999,
+    height: 20,
+    width: 20,
+  },
+  submitButton: {
+    marginTop: 8,
+    overflow: "hidden",
+  },
+  submitGradient: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 56,
+  },
+});

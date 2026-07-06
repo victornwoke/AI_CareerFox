@@ -1,4 +1,3 @@
-import { Image } from "expo-image";
 import {
   Pressable,
   StyleSheet,
@@ -7,6 +6,7 @@ import {
   View,
 } from "react-native";
 
+import { SymbolIcon } from "@/components/ui/SymbolIcon";
 import { colors } from "@/constants/colors";
 import { componentStyles } from "@/constants/theme";
 
@@ -37,12 +37,13 @@ export function AuthField({
 
   return (
     <View style={[componentStyles.input, styles.container]}>
-      <Image
-        contentFit="contain"
-        source={`sf:${icon}`}
-        style={styles.icon}
+      <SymbolIcon
+        color={colors.authMuted}
+        name={icon}
+        size={22}
       />
       <TextInput
+        accessibilityLabel={placeholder}
         autoCapitalize={isEmailField || isPasswordField ? "none" : "sentences"}
         className="flex-1 text-[16px] font-semibold text-text-primary"
         inputMode={isEmailField ? "email" : "text"}
@@ -61,10 +62,11 @@ export function AuthField({
           className="h-10 w-10 items-end justify-center"
           onPress={onToggleSecure}
         >
-          <Image
-            contentFit="contain"
-            source="sf:eye"
-            style={styles.icon}
+          <SymbolIcon
+            accessibilityLabel={secureTextEntry ? "Show password" : "Hide password"}
+            color={colors.authMuted}
+            name={secureTextEntry ? "eye" : "eye.slash"}
+            size={22}
           />
         </Pressable>
       ) : null}
@@ -77,10 +79,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 12,
-  },
-  icon: {
-    height: 22,
-    tintColor: colors.authMuted,
-    width: 22,
   },
 });
