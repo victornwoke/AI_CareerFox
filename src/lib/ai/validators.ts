@@ -75,9 +75,14 @@ export function validateAiPracticeMode(
 }
 
 export function validateBasicAiRequestQuota(
-  userId: string,
+  request: Request,
 ): AiValidationResult<null> {
   const now = Date.now();
+  const authHeader = request.headers.get("authorization");
+  const userId = authHeader ?? `anonymous:${request.headers.get("x-forwarded-for") ?? "unknown"}`;
+
+  pruneExpiredWindows(now);
+
   const existingWindow = requestWindows.get(userId);
 
   if (!existingWindow || existingWindow.resetAt <= now) {
@@ -105,4 +110,12 @@ export function validateBasicAiRequestQuota(
     data: null,
     ok: true,
   };
+}
+
+function pruneExpiredWindows(now: number): void {
+  for (const [key, window] of requestWindows) {
+    if (window.resetAt <= now) {
+      requestWindows.delete(key);
+    }
+  }
 }

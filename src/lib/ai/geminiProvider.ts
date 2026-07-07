@@ -4,9 +4,9 @@ import {
 } from "@/lib/ai/aiProvider";
 import { AiProviderError } from "@/lib/ai/providerErrors";
 
-const geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/interactions";
+const geminiApiBaseUrl = "https://generativelanguage.googleapis.com/v1beta";
 const defaultModel = "gemini-3.5-flash";
-const defaultTimeoutMs = 15_000;
+const defaultTimeoutMs = 60_000;
 const maxAiResponseBytes = 14_000;
 
 export function createGeminiProvider(): AiProvider {
@@ -32,16 +32,22 @@ async function fetchGeminiStructuredJson({
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const model = process.env.GEMINI_MODEL ?? defaultModel;
 
   try {
-    const response = await fetch(geminiEndpoint, {
+    const response = await fetch(getGenerateContentEndpoint(model), {
       body: JSON.stringify({
-        input: prompt,
-        model: process.env.GEMINI_MODEL ?? defaultModel,
-        response_format: {
-          mime_type: "application/json",
-          schema,
-          type: "text",
+        contents: [
+          {
+            parts: [{ text: prompt }],
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 2_048,
+          responseMimeType: "application/json",
+          responseSchema: toGeminiGenerateContentSchema(schema),
+          temperature: 0.4,
+          ...getThinkingConfig(model),
         },
       }),
       headers: {
@@ -87,6 +93,55 @@ async function fetchGeminiStructuredJson({
   }
 }
 
+function getGenerateContentEndpoint(model: string) {
+  const modelName = model.startsWith("models/") ? model.slice("models/".length) : model;
+
+  return `${geminiApiBaseUrl}/models/${encodeURIComponent(modelName)}:generateContent`;
+}
+
+function getThinkingConfig(model: string): Record<string, unknown> {
+  const normalizedModel = model.toLowerCase();
+
+  if (normalizedModel.includes("gemini-3")) {
+    return {
+      thinkingConfig: {
+        thinkingLevel: "minimal",
+      },
+    };
+  }
+
+  if (normalizedModel.includes("gemini-2.5-flash")) {
+    return {
+      thinkingConfig: {
+        thinkingBudget: 0,
+      },
+    };
+  }
+
+  return {};
+}
+
+function toGeminiGenerateContentSchema(
+  schema: AiGenerateJsonRequest["schema"],
+): Record<string, unknown> {
+  const { additionalProperties: _additionalProperties, items, properties, ...rest } = schema;
+
+  return {
+    ...rest,
+    ...(items ? { items: toGeminiGenerateContentSchema(items) } : {}),
+    ...(properties
+      ? {
+          properties: Object.fromEntries(
+            Object.entries(properties).map(([key, value]) => [
+              key,
+              toGeminiGenerateContentSchema(value),
+            ]),
+          ),
+        }
+      : {}),
+  };
+}
+
 function extractGeminiOutputText(responseBody: unknown): string | null {
   const record = asRecord(responseBody);
 
@@ -98,19 +153,56 @@ function extractGeminiOutputText(responseBody: unknown): string | null {
     return record.output_text;
   }
 
+  const steps = record.steps;
+
+  if (Array.isArray(steps)) {
+    for (const step of steps) {
+      const stepRecord = asRecord(step);
+
+      if (stepRecord?.type !== "model_output") {
+        continue;
+      }
+
+      const stepOutputText =
+        typeof stepRecord.output_text === "string"
+          ? stepRecord.output_text
+          : extractTextContent(stepRecord.content);
+
+      if (stepOutputText) {
+        return stepOutputText;
+      }
+    }
+  }
+
   const candidates = record.candidates;
 
   if (Array.isArray(candidates)) {
     const firstCandidate = asRecord(candidates[0]);
     const content = asRecord(firstCandidate?.content);
-    const parts = content?.parts;
+    const candidateOutputText = extractTextContent(content?.parts);
 
-    if (Array.isArray(parts)) {
-      const firstPart = asRecord(parts[0]);
+    if (candidateOutputText) {
+      return candidateOutputText;
+    }
+  }
 
-      if (typeof firstPart?.text === "string") {
-        return firstPart.text;
-      }
+  return null;
+}
+
+function extractTextContent(value: unknown): string | null {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  for (const item of value) {
+    const itemRecord = asRecord(item);
+
+    if (typeof itemRecord?.text === "string") {
+      return itemRecord.text;
     }
   }
 

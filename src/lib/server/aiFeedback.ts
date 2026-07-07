@@ -51,6 +51,7 @@ export type InterviewFeedbackOutput = {
     confidence: number;
     starQuality: number;
   };
+  nextPracticeSuggestion: string;
 };
 
 export type CvFeedbackInput = {
@@ -252,6 +253,10 @@ const interviewFeedbackSchema: JsonSchema = {
       ],
       type: "object",
     },
+    nextPracticeSuggestion: {
+      description: "One specific next interview practice task for the user.",
+      type: "string",
+    },
   },
   required: [
     "score",
@@ -260,6 +265,7 @@ const interviewFeedbackSchema: JsonSchema = {
     "improvements",
     "improvedAnswer",
     "categories",
+    "nextPracticeSuggestion",
   ],
   type: "object",
 };
@@ -817,18 +823,18 @@ export async function createInterviewFeedback(
   input: InterviewFeedbackInput,
 ): Promise<InterviewFeedbackOutput> {
   const prompt = [
-    "You are CareerFox AI, a premium career coach for interview practice.",
-    "",
-    "Rules:",
-    `- ${careerCoachRules}`,
-    "",
-    "Evaluate this interview answer.",
+    "You are CareerFox AI, a supportive but honest interview coach.",
+    `Rules:\n${careerCoachRules}`,
+    "Evaluate the answer and return concise JSON only.",
     formatAiContext(input),
     `Question category: ${input.category}`,
     `Question: ${input.question}`,
     `Answer: ${input.answer}`,
-    "",
-    "Return concise JSON only. Keep improvedAnswer under 140 words.",
+    "Explain the score clearly in summary.",
+    "Use exactly two strengths and two improvements.",
+    "Avoid vague advice; name the wording, structure, evidence, or result to improve.",
+    "Keep improvedAnswer under 100 words and use STAR or XYZ where suitable.",
+    "Make nextPracticeSuggestion one specific drill.",
   ].join("\n");
 
   const response = await fetchGeminiStructuredJson(prompt, interviewFeedbackSchema);
@@ -843,7 +849,7 @@ export async function createCvFeedback(
     "You are CareerFox AI, a premium career coach for CV improvement.",
     "",
     "Rules:",
-    `- ${careerCoachRules}`,
+    `${careerCoachRules}`,
     "",
     "Review this CV for the target role.",
     formatAiContext(input),
@@ -868,7 +874,7 @@ export async function createPracticeQuestion(
     "You are CareerFox AI, a practical interview coach.",
     "",
     "Rules:",
-    `- ${careerCoachRules}`,
+    `${careerCoachRules}`,
     "",
     "Generate one original interview practice question.",
     formatAiContext(input),
@@ -896,7 +902,7 @@ export async function createInterviewQuestions(
     "You are CareerFox AI, a practical interview coach.",
     "",
     "Rules:",
-    `- ${careerCoachRules}`,
+    `${careerCoachRules}`,
     "",
     `Generate ${count} original interview practice questions.`,
     formatAiContext(input),
@@ -923,7 +929,7 @@ export async function createLearningCategories(
     "You are CareerFox AI, designing structured career learning paths.",
     "",
     "Rules:",
-    `- ${careerCoachRules}`,
+    `${careerCoachRules}`,
     "",
     "Generate learning categories for the Learn screen.",
     formatAiContext(input),
@@ -945,7 +951,7 @@ export async function createLesson(
     "You are CareerFox AI, creating a short teachable career lesson.",
     "",
     "Rules:",
-    `- ${careerCoachRules}`,
+    `${careerCoachRules}`,
     "",
     "Generate lesson content for a mobile learning or interview question-start screen.",
     formatAiContext(input),
@@ -1188,6 +1194,11 @@ function normalizeInterviewFeedback(value: unknown): InterviewFeedbackOutput {
     },
     improvedAnswer: requireString(record.improvedAnswer, "improvedAnswer", 1_200),
     improvements: requireStringList(record.improvements, "improvements", 4, 220),
+    nextPracticeSuggestion: requireString(
+      record.nextPracticeSuggestion,
+      "nextPracticeSuggestion",
+      280,
+    ),
     score: requireScore(record.score, "score"),
     strengths: requireStringList(record.strengths, "strengths", 4, 220),
     summary: requireString(record.summary, "summary", 360),
@@ -1410,9 +1421,19 @@ function sanitizeKebabId(value: string) {
 }
 
 export function validateBasicAiRequestQuota(
-  userId: string,
+  request: Request,
 ): ApiValidationResult<null> {
-  return checkBasicAiRequestQuota(userId);
+  return checkBasicAiRequestQuota(request);
+}
+
+export function enforceAiQuota(request: Request): Response | null {
+  const quotaValidation = validateBasicAiRequestQuota(request);
+
+  if (!quotaValidation.ok) {
+    return jsonResponse({ error: quotaValidation.error }, { status: 429 });
+  }
+
+  return null;
 }
 
 export class PublicApiError extends Error {

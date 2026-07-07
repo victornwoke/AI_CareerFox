@@ -31,7 +31,6 @@ import type {
   TargetRole,
 } from "@/types/career";
 
-const applicationsHref = "/applications" as Href;
 const cvHref = "/cv" as Href;
 const interviewHref = "/interview" as Href;
 const learnScreenCategories = learningCategories.filter(
@@ -84,10 +83,6 @@ function ProgressBar({
 }
 
 function getCategoryHref(category: LearningCategory): Href {
-  if (category.destination === "applications") {
-    return applicationsHref;
-  }
-
   if (category.destination === "cv") {
     return cvHref;
   }
@@ -542,7 +537,7 @@ export default function LearnScreen() {
               No matching categories
             </Text>
             <Text className="mt-2 text-center text-[14px] font-semibold leading-[21px] text-[#8F92A8]">
-              Try searching for interview, CV, skills, or job search.
+              Try searching for interview, CV, skills, or career guidance.
             </Text>
           </View>
         ) : null}

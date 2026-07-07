@@ -1,9 +1,9 @@
 import {
   createPracticeQuestion,
+  enforceAiQuota,
   handleAiRouteError,
   jsonResponse,
   readJsonBody,
-  validateBasicAiRequestQuota,
   validateGeneratePracticeQuestionInput,
   validateRequestSize,
 } from "@/lib/server/aiFeedback";
@@ -27,10 +27,10 @@ export async function POST(request: Request) {
     return jsonResponse({ error: validation.error }, { status: 400 });
   }
 
-  const quotaValidation = validateBasicAiRequestQuota(validation.data.userId);
+  const quotaResponse = enforceAiQuota(request);
 
-  if (!quotaValidation.ok) {
-    return jsonResponse({ error: quotaValidation.error }, { status: 429 });
+  if (quotaResponse) {
+    return quotaResponse;
   }
 
   try {

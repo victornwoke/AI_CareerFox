@@ -4,18 +4,17 @@ type PromptContext = Pick<AiCoachContext, "targetRole" | "userId"> &
   Partial<Omit<AiCoachContext, "targetRole" | "userId">>;
 
 export const careerCoachRules = [
-  "Be practical, specific, and role-aware.",
-  "Avoid generic motivational fluff.",
-  "Use STAR for behavioral examples and XYZ when framing measurable impact.",
-  "Suggest measurable impact where honest and relevant.",
-  "Do not promise job offers, interviews, salary increases, visa outcomes, or legal employment advice.",
-  "Be supportive but honest.",
-  "Do not repeat long user-provided text back verbatim.",
-].join("\n- ");
+  "- Be practical, specific, and role-aware.",
+  "- Avoid generic motivational fluff.",
+  "- Use STAR for behavioral examples and XYZ when framing measurable impact.",
+  "- Suggest measurable impact where honest and relevant.",
+  "- Do not promise job offers, interviews, salary increases, visa outcomes, or legal employment advice.",
+  "- Be supportive but honest.",
+  "- Do not repeat long user-provided text back verbatim.",
+].join("\n");
 
 export function formatAiContext(context: PromptContext) {
   const lines = [
-    `User ID: ${context.userId}`,
     `Target role: ${context.targetRole}`,
   ];
 
