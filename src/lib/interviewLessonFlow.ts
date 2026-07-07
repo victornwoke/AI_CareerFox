@@ -59,11 +59,14 @@ export function getActiveBehavioralLesson({
   lessons: BehavioralLesson[];
 }) {
   const completedQuestionIdSet = new Set(completedQuestionIds);
+  const activeLesson = lessons.find(
+    (lesson) =>
+      lesson.id === activeQuestionId && !completedQuestionIdSet.has(lesson.id),
+  );
 
   return (
-    lessons.find((lesson) => lesson.id === activeQuestionId) ??
+    activeLesson ??
     lessons.find((lesson) => !completedQuestionIdSet.has(lesson.id)) ??
-    lessons[0] ??
     null
   );
 }
