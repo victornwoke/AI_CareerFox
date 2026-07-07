@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { type Href, useRouter } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   type NativeScrollEvent,
@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors } from "@/constants/colors";
 import { images } from "@/constants/images";
+import { trackOnboardingStarted } from "@/lib/analytics";
 
 type OnboardingStep = {
   id: string;
@@ -47,6 +48,10 @@ export default function OnboardingScreen() {
   const { width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<FlatList<OnboardingStep>>(null);
+
+  useEffect(() => {
+    trackOnboardingStarted();
+  }, []);
 
   const horizontalPadding = width < 360 ? 22 : 24;
   const mascotSize = useMemo(

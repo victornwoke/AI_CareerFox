@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import {
   Pressable,
   ScrollView,
@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SymbolIcon, type SymbolIconName } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import { targetRoles } from "@/data/roles";
+import { trackCvAnalysisCompleted } from "@/lib/analytics";
 
 type ScoreMetric = {
   color: string;
@@ -156,6 +157,15 @@ export default function CvResultsScreen() {
     : fallbackKeywordGaps;
   const hasJobDescriptionSource = hasJobDescription === "true";
   const isNarrow = width < 370;
+
+  useEffect(() => {
+    trackCvAnalysisCompleted({
+      atsKeywordGapCount: keywordGaps.length,
+      hasJobDescription: hasJobDescriptionSource,
+      score: 74,
+      targetRoleId: roleId ?? null,
+    });
+  }, [hasJobDescriptionSource, keywordGaps.length, roleId]);
 
   return (
     <View className="flex-1 bg-white">

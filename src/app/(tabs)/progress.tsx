@@ -47,9 +47,10 @@ type DayBucket = {
 };
 
 const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const chartMaxBarHeight = 170;
-const trendTop = 12;
-const trendBottom = 118;
+const chartMaxBarHeight = 88;
+const trendPlotHeight = 102;
+const trendTop = 10;
+const trendBottom = 88;
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
@@ -227,7 +228,7 @@ function ChartCard({
 }) {
   return (
     <View
-      className="rounded-[24px] bg-white px-4 py-6"
+      className="rounded-[24px] bg-white px-4 py-5"
       style={{ boxShadow: "0 12px 28px rgba(13, 19, 43, 0.05)" }}
     >
       <Text className="text-[22px] font-bold leading-[28px] text-[#17172B]">
@@ -249,14 +250,14 @@ function DashedGridLine({ top }: { top: number }) {
 
 function QuestionsChart({ data }: { data: BarDatum[] }) {
   return (
-    <View className="relative mt-6 h-[220px]">
-      <DashedGridLine top={18} />
-      <DashedGridLine top={88} />
-      <DashedGridLine top={158} />
+    <View className="relative mt-5 h-[142px] overflow-hidden">
+      <DashedGridLine top={16} />
+      <DashedGridLine top={62} />
+      <DashedGridLine top={108} />
 
-      <View className="absolute bottom-8 left-0 right-0 flex-row items-end justify-between px-2">
+      <View className="absolute bottom-7 left-0 right-0 flex-row items-end px-1">
         {data.map((item) => (
-          <View className="w-[40px] items-center" key={item.day}>
+          <View className="flex-1 items-center" key={item.day}>
             <View
               className="w-[20px] rounded-t-[8px] bg-primary"
               style={{ height: item.height }}
@@ -265,11 +266,14 @@ function QuestionsChart({ data }: { data: BarDatum[] }) {
         ))}
       </View>
 
-      <View className="absolute bottom-0 left-0 right-0 flex-row justify-between px-2">
+      <View className="absolute bottom-0 left-0 right-0 flex-row px-1">
         {data.map((item) => (
           <Text
-            className="w-[40px] text-center text-[13px] font-semibold leading-[18px] text-[#8F92A8]"
+            adjustsFontSizeToFit
+            className="flex-1 text-center text-[13px] font-semibold leading-[18px] text-[#8F92A8]"
             key={item.day}
+            minimumFontScale={0.82}
+            numberOfLines={1}
           >
             {item.day}
           </Text>
@@ -280,19 +284,19 @@ function QuestionsChart({ data }: { data: BarDatum[] }) {
 }
 
 function ScoreTrendChart({
+  chartWidth,
   data,
-  width,
 }: {
+  chartWidth: number;
   data: TrendPoint[];
-  width: number;
 }) {
-  const compactWidth = Math.max(184, Math.min(240, width - 142));
   const labelWidth = 44;
+  const plotWidth = Math.max(1, chartWidth - labelWidth);
   const pointSpacing =
-    data.length > 1 ? compactWidth / Math.max(1, data.length - 1) : 0;
+    data.length > 1 ? plotWidth / Math.max(1, data.length - 1) : 0;
   const chartPoints = data.map((point, index) => ({
     ...point,
-    left: index * pointSpacing,
+    left: labelWidth / 2 + index * pointSpacing,
     top: point.score === null ? null : getTrendY(point.score),
   }));
   const visiblePoints = chartPoints.filter(
@@ -314,14 +318,14 @@ function ScoreTrendChart({
     });
 
   return (
-    <View className="relative mt-6 h-[190px]">
-      <DashedGridLine top={12} />
-      <DashedGridLine top={84} />
-      <DashedGridLine top={118} />
+    <View className="relative mt-5 h-[126px] overflow-hidden">
+      <DashedGridLine top={10} />
+      <DashedGridLine top={64} />
+      <DashedGridLine top={96} />
 
       <View
-        className="absolute left-0 top-0 h-[126px]"
-        style={{ width: compactWidth }}
+        className="absolute left-0 top-0"
+        style={{ height: trendPlotHeight, width: chartWidth }}
       >
         {trendSegments.map((segment) => (
           <View
@@ -329,8 +333,9 @@ function ScoreTrendChart({
             key={`${segment.left}-${segment.rotate}`}
             style={{
               left: segment.left,
-              top: segment.top,
+              top: segment.top - 2,
               transform: [{ rotate: `${segment.rotate}deg` }],
+              transformOrigin: "left center",
               width: segment.width,
             }}
           />
@@ -340,8 +345,8 @@ function ScoreTrendChart({
             className="absolute h-[9px] w-[9px] rounded-full bg-[#FF6B1A]"
             key={`${point.day}-${point.left}-${point.top}`}
             style={{
-              left: point.left - 4,
-              top: point.top - 3,
+              left: point.left - 4.5,
+              top: point.top - 4.5,
             }}
           />
         ))}
@@ -349,12 +354,15 @@ function ScoreTrendChart({
 
       <View
         className="absolute bottom-0 left-0 h-[20px]"
-        style={{ width: compactWidth }}
+        style={{ width: chartWidth }}
       >
         {chartPoints.map((point) => (
           <Text
+            adjustsFontSizeToFit
             className="absolute text-center text-[13px] font-semibold leading-[18px] text-[#8F92A8]"
             key={`${point.day}-${point.left}`}
+            minimumFontScale={0.82}
+            numberOfLines={1}
             style={{ left: point.left - labelWidth / 2, width: labelWidth }}
           >
             {point.day}
@@ -401,6 +409,7 @@ export default function ProgressScreen() {
   const readinessScore = useProgressStore((state) => state.readinessScore);
   const isNarrow = width < 370;
   const horizontalPadding = isNarrow ? 20 : 24;
+  const chartInnerWidth = Math.max(1, width - horizontalPadding * 2 - 32);
   const questionBars = useMemo(
     () => buildQuestionBars({ completedQuestionIds, practiceHistory }),
     [completedQuestionIds, practiceHistory],
@@ -445,7 +454,7 @@ export default function ProgressScreen() {
           style={{
             borderBottomLeftRadius: 48,
             borderBottomRightRadius: 48,
-            paddingBottom: 48,
+            paddingBottom: 30,
             paddingHorizontal: horizontalPadding,
             paddingTop: Math.max(insets.top + 12, 32),
           }}
@@ -473,7 +482,7 @@ export default function ProgressScreen() {
             </View>
           </View>
 
-          <View className="mt-7 flex-row gap-3">
+          <View className="mt-6 flex-row gap-3">
             <ProgressStatCard
               detail="+23 from last week"
               label="Questions"
@@ -493,7 +502,7 @@ export default function ProgressScreen() {
         </LinearGradient>
 
         <View
-          className="-mt-6 gap-8"
+          className="-mt-5 gap-5"
           style={{ paddingHorizontal: horizontalPadding }}
         >
           <ChartCard title="Questions Answered">
@@ -501,11 +510,14 @@ export default function ProgressScreen() {
           </ChartCard>
 
           <ChartCard title="Score Trend">
-            <ScoreTrendChart data={scoreTrendPoints} width={width} />
+            <ScoreTrendChart
+              chartWidth={chartInnerWidth}
+              data={scoreTrendPoints}
+            />
           </ChartCard>
 
           <ChartCard title="Category Breakdown">
-            <View className="mt-7 gap-6">
+            <View className="mt-5 gap-5">
               <CategoryRow
                 color={colors.success}
                 label="Behavioral"

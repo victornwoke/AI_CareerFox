@@ -1,7 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useMemo } from "react";
-import { usePostHog } from "posthog-react-native";
 import {
   Pressable,
   ScrollView,
@@ -19,6 +18,7 @@ import {
   getBehavioralLessons,
   getNextBehavioralLesson,
 } from "@/lib/interviewLessonFlow";
+import { trackInterviewAnswerSubmitted } from "@/lib/analytics";
 import { useCareerStore } from "@/store/useCareerStore";
 import { useInterviewStore } from "@/store/useInterviewStore";
 
@@ -37,7 +37,6 @@ export default function InterviewQuestionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
-  const posthog = usePostHog();
   const selectedTargetRoleId = useCareerStore(
     (state) => state.selectedTargetRole,
   );
@@ -95,11 +94,14 @@ export default function InterviewQuestionScreen() {
       return;
     }
 
-    posthog.capture('interview_answer_submitted', {
-      lesson_id: lesson.id,
-      lesson_number: lesson.lessonNumber,
-      role_id: selectedTargetRoleId,
-      answer_length: answer.trim().length,
+    trackInterviewAnswerSubmitted({
+      answerLength: answer.trim().length,
+      lessonId: lesson.id,
+      lessonNumber: lesson.lessonNumber,
+      mode: "text",
+      questionCategory: "behavioral",
+      questionId: lesson.id,
+      roleId: selectedTargetRoleId,
       skipped: false,
     });
 
@@ -294,11 +296,14 @@ export default function InterviewQuestionScreen() {
                 className="rounded-full bg-[#F5F1FF] px-4 py-2"
                 onPress={() => {
                     if (lesson) {
-                      posthog.capture('interview_answer_submitted', {
-                        lesson_id: lesson.id,
-                        lesson_number: lesson.lessonNumber,
-                        role_id: selectedTargetRoleId,
-                        answer_length: 0,
+                      trackInterviewAnswerSubmitted({
+                        answerLength: 0,
+                        lessonId: lesson.id,
+                        lessonNumber: lesson.lessonNumber,
+                        mode: "text",
+                        questionCategory: "behavioral",
+                        questionId: lesson.id,
+                        roleId: selectedTargetRoleId,
                         skipped: true,
                       });
                     }

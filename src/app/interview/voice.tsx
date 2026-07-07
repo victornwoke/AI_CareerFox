@@ -17,6 +17,11 @@ import { colors } from "@/constants/colors";
 import { images } from "@/constants/images";
 import { interviewQuestions } from "@/data/interviewQuestions";
 import { targetRoles } from "@/data/roles";
+import {
+  trackInterviewAnswerSubmitted,
+  trackInterviewFeedbackViewed,
+  trackInterviewPracticeStarted,
+} from "@/lib/analytics";
 import { useCareerStore } from "@/store/useCareerStore";
 import { useInterviewStore } from "@/store/useInterviewStore";
 
@@ -98,6 +103,7 @@ export default function VoicePracticeScreen() {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasTrackedPracticeStartRef = useRef(false);
   const selectedTargetRoleId = useCareerStore(
     (state) => state.selectedTargetRole,
   );
@@ -186,6 +192,30 @@ export default function VoicePracticeScreen() {
       clearTimeout(feedbackTimerRef.current);
     }
 
+    if (!hasTrackedPracticeStartRef.current) {
+      trackInterviewPracticeStarted({
+        mode: "voice",
+        questionCategory: activeQuestion?.category ?? null,
+        questionId,
+        roleId: selectedTargetRoleId,
+      });
+      hasTrackedPracticeStartRef.current = true;
+    }
+
+    const submittedAnswerLength = answerText.trim().length;
+    const readinessScore = submittedAnswerLength > 0 ? 78 : 64;
+
+    trackInterviewAnswerSubmitted({
+      answerLength: submittedAnswerLength,
+      durationSeconds: elapsedSeconds,
+      mode: "voice",
+      questionCategory: activeQuestion?.category ?? null,
+      questionId,
+      readinessScore,
+      roleId: selectedTargetRoleId,
+      skipped: false,
+    });
+
     setPhase("submitted");
 
     feedbackTimerRef.current = setTimeout(() => {
@@ -204,7 +234,13 @@ export default function VoicePracticeScreen() {
         mode: "voice",
         practicedAt: new Date().toISOString(),
         questionId,
-        readinessScore: trimmedAnswer.length > 0 ? 78 : 64,
+        readinessScore,
+      });
+      trackInterviewFeedbackViewed({
+        questionCategory: activeQuestion?.category ?? null,
+        questionId,
+        readinessScore,
+        roleId: selectedTargetRoleId,
       });
       setPhase("feedback");
     }, 900);
@@ -217,6 +253,13 @@ export default function VoicePracticeScreen() {
 
     setElapsedSeconds(0);
     setFeedbackSummary(null);
+    trackInterviewPracticeStarted({
+      mode: "voice",
+      questionCategory: activeQuestion?.category ?? null,
+      questionId,
+      roleId: selectedTargetRoleId,
+    });
+    hasTrackedPracticeStartRef.current = true;
     setPhase("recording");
   };
 
@@ -237,6 +280,7 @@ export default function VoicePracticeScreen() {
     setPhase("ready");
     setElapsedSeconds(0);
     setFeedbackSummary(null);
+    hasTrackedPracticeStartRef.current = false;
     router.back();
   };
 

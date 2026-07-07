@@ -6,6 +6,7 @@ import { Stack, usePathname, useGlobalSearchParams } from "expo-router";
 import { useEffect, useRef } from "react";
 import { PostHogProvider } from "posthog-react-native";
 
+import { AnalyticsIdentitySync } from "@/components/auth/AnalyticsIdentitySync";
 import { CareerFoxStorageSync } from "@/components/auth/CareerFoxStorageSync";
 import { GoalSetupStorageSync } from "@/components/auth/GoalSetupStorageSync";
 import { posthog } from "@/config/posthog";
@@ -46,6 +47,7 @@ export default function RootLayout() {
           maxElementsCaptured: 20,
         }}
       >
+        <AnalyticsIdentitySync />
         <CareerFoxStorageSync />
         <GoalSetupStorageSync />
         <ScreenTracker />

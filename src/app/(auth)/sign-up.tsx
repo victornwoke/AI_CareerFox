@@ -1,6 +1,5 @@
 import { useSignUp } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
-import { usePostHog } from "posthog-react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
@@ -25,6 +24,7 @@ import {
   useSocialAuth,
   type SocialAuthProvider,
 } from "@/hooks/useSocialAuth";
+import { trackSignupCompleted, trackSignupStarted } from "@/lib/analytics";
 import { getClerkErrorMessage } from "@/lib/clerkErrors";
 
 const goalSetupHref = "/target-role" as Href;
@@ -43,7 +43,6 @@ export default function SignUpScreen() {
   const router = useRouter();
   const { fetchStatus, signUp } = useSignUp();
   const { startSocialAuth } = useSocialAuth();
-  const posthog = usePostHog();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [fullName, setFullName] = useState("");
@@ -73,13 +72,7 @@ export default function SignUpScreen() {
       return getClerkErrorMessage(finalizeError);
     }
 
-    const userId = signUp.createdUserId;
-    if (userId) {
-      posthog.identify(userId, {
-        $set_once: { first_sign_up_date: new Date().toISOString() },
-      });
-    }
-    posthog.capture('user_signed_up', { method: 'email' });
+    trackSignupCompleted("email");
 
     if (!didNavigate) {
       router.replace(goalSetupHref);
@@ -114,6 +107,8 @@ export default function SignUpScreen() {
     const { firstName, lastName } = getNameParts(fullName);
 
     try {
+      trackSignupStarted("email");
+
       const { error: signUpError } = await signUp.password({
         emailAddress: email.trim(),
         firstName,
@@ -191,12 +186,15 @@ export default function SignUpScreen() {
     setError("");
     setSocialLoadingProvider(provider);
 
+    const method = provider.toLowerCase() as "apple" | "google" | "linkedin";
+    trackSignupStarted(method);
+
     const nextError = await startSocialAuth(provider);
 
     if (nextError) {
       setError(nextError);
     } else {
-      posthog.capture('user_signed_up', { method: provider.toLowerCase() });
+      trackSignupCompleted(method);
     }
 
     setSocialLoadingProvider(null);
