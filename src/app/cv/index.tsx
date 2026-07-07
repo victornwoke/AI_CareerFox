@@ -1,7 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { usePostHog } from "posthog-react-native";
 import {
   Pressable,
   ScrollView,
@@ -15,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SymbolIcon } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import { targetRoles } from "@/data/roles";
+import { trackCvAnalysisStarted } from "@/lib/analytics";
 
 const minCvLength = 80;
 const supportedDocumentTypes = [
@@ -54,7 +54,6 @@ export default function CvScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const posthog = usePostHog();
   const isNarrow = width < 370;
   const [cvText, setCvText] = useState("");
   const [jobDescriptionText, setJobDescriptionText] = useState("");
@@ -117,11 +116,11 @@ export default function CvScreen() {
       return;
     }
 
-    posthog.capture('cv_analysis_started', {
-      has_job_description: hasJobDescriptionSource,
-      cv_input_type: cvFile ? 'file' : 'text',
-      cv_text_length: trimmedCv.length,
-      target_role_id: selectedCvRoleId,
+    trackCvAnalysisStarted({
+      cvInputType: cvFile ? "file" : "text",
+      cvTextLength: trimmedCv.length,
+      hasJobDescription: hasJobDescriptionSource,
+      targetRoleId: selectedCvRoleId,
     });
 
     if (selectedCvRoleId) {

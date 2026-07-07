@@ -2,12 +2,12 @@ import { useAuth } from "@clerk/expo";
 import { Image } from "expo-image";
 import { Redirect, type Href, useRouter } from "expo-router";
 import { useCallback } from "react";
-import { usePostHog } from "posthog-react-native";
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/constants/colors";
 import { experienceLevels } from "@/data/experienceLevels";
+import { trackExperienceLevelSelected } from "@/lib/analytics";
 import { useCareerStore } from "@/store/useCareerStore";
 
 type ExperienceIcon = {
@@ -48,11 +48,9 @@ export default function ExperienceLevelScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height, width } = useWindowDimensions();
-  const posthog = usePostHog();
   const selectedExperienceLevelId = useCareerStore(
     (state) => state.selectedExperienceLevel,
   );
-  const selectedTargetRoleId = useCareerStore((state) => state.selectedTargetRole);
   const markSetupCompleted = useCareerStore((state) => state.markSetupCompleted);
   const setSelectedExperienceLevelId = useCareerStore(
     (state) => state.setSelectedExperienceLevel,
@@ -73,14 +71,24 @@ export default function ExperienceLevelScreen() {
       return;
     }
 
-    posthog.capture('onboarding_completed', {
-      experience_level: selectedExperienceLevelId,
-      target_role_id: selectedTargetRoleId,
-    });
-
     markSetupCompleted();
     router.replace(homeHref);
-  }, [markSetupCompleted, posthog, router, selectedExperienceLevelId, selectedTargetRoleId]);
+  }, [markSetupCompleted, router, selectedExperienceLevelId]);
+
+  const handleExperienceLevelSelect = useCallback(
+    (experienceLevelId: string) => {
+      const selectedExperienceLevel = experienceLevels.find(
+        (level) => level.id === experienceLevelId,
+      );
+
+      setSelectedExperienceLevelId(experienceLevelId);
+      trackExperienceLevelSelected({
+        experienceLevelId,
+        experienceLevelLabel: selectedExperienceLevel?.label ?? null,
+      });
+    },
+    [setSelectedExperienceLevelId],
+  );
 
   if (!isLoaded) {
     return null;
@@ -140,7 +148,7 @@ export default function ExperienceLevelScreen() {
                 accessibilityState={{ checked: isSelected }}
                 className="flex-row items-center rounded-[24px] border-[2px] bg-white"
                 key={level.id}
-                onPress={() => setSelectedExperienceLevelId(level.id)}
+                onPress={() => handleExperienceLevelSelect(level.id)}
                 style={{
                   backgroundColor: isSelected ? "#F3F0FF" : colors.white,
                   borderColor: isSelected ? colors.primary : "#EEE1FF",

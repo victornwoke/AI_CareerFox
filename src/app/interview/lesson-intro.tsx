@@ -2,7 +2,6 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useMemo } from "react";
-import { usePostHog } from "posthog-react-native";
 import {
   Pressable,
   ScrollView,
@@ -19,6 +18,7 @@ import {
   getActiveBehavioralLesson,
   getBehavioralLessons,
 } from "@/lib/interviewLessonFlow";
+import { trackInterviewPracticeStarted } from "@/lib/analytics";
 import { useCareerStore } from "@/store/useCareerStore";
 import { useInterviewStore } from "@/store/useInterviewStore";
 
@@ -35,7 +35,6 @@ export default function LessonIntroScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
-  const posthog = usePostHog();
   const selectedTargetRoleId = useCareerStore(
     (state) => state.selectedTargetRole,
   );
@@ -59,11 +58,14 @@ export default function LessonIntroScreen() {
   const startLesson = () => {
     if (lesson) {
       setActiveQuestionId(lesson.id);
-      posthog.capture('interview_practice_started', {
-        lesson_id: lesson.id,
-        lesson_number: lesson.lessonNumber,
-        role_id: selectedTargetRoleId,
-        expected_structure: lesson.expectedStructure,
+      trackInterviewPracticeStarted({
+        expectedStructure: lesson.expectedStructure,
+        lessonId: lesson.id,
+        lessonNumber: lesson.lessonNumber,
+        mode: "text",
+        questionCategory: "behavioral",
+        questionId: lesson.id,
+        roleId: selectedTargetRoleId,
       });
     }
 

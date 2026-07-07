@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { careerMissions } from "@/data/missions";
+import { trackDailyMissionCompleted } from "@/lib/analytics";
 import { careerFoxStorage } from "@/store/careerFoxStorage";
 
 type ProgressStateData = {
@@ -53,9 +55,22 @@ export const useProgressStore = create<ProgressState>()(
         set(initialProgressState);
       },
       completeMission: (missionId) =>
-        set((state) => ({
-          completedMissionIds: addUniqueId(state.completedMissionIds, missionId),
-        })),
+        set((state) => {
+          if (!state.completedMissionIds.includes(missionId)) {
+            const mission = careerMissions.find((item) => item.id === missionId);
+
+            trackDailyMissionCompleted({
+              missionCategory: mission?.category ?? null,
+              missionId,
+              missionXp: mission?.xp,
+              source: "progress_store",
+            });
+          }
+
+          return {
+            completedMissionIds: addUniqueId(state.completedMissionIds, missionId),
+          };
+        }),
       resetProgressState: () => set(initialProgressState),
       setReadinessScore: (score) =>
         set({ readinessScore: clampReadinessScore(score) }),

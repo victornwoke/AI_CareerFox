@@ -18,6 +18,7 @@ import { colors, gradients } from "@/constants/colors";
 import { images } from "@/constants/images";
 import { careerMissions } from "@/data/missions";
 import { targetRoles } from "@/data/roles";
+import { trackDailyMissionStarted } from "@/lib/analytics";
 import { useCareerStore } from "@/store/useCareerStore";
 import { useProgressStore } from "@/store/useProgressStore";
 import type { CareerMission } from "@/types/career";
@@ -26,6 +27,7 @@ const coachHref = "/coach" as Href;
 const learnHref = "/learn" as Href;
 const applicationsHref = "/applications" as Href;
 const cvHref = "/cv" as Href;
+const profileHref = "/profile" as Href;
 const progressHref = "/progress" as Href;
 const targetRoleHref = "/target-role" as Href;
 
@@ -314,6 +316,16 @@ export default function HomeScreen() {
     ? selectedRole.title
     : "Personalize your coaching plan";
 
+  const startDailyMission = (mission: CareerMission, source: string) => {
+    trackDailyMissionStarted({
+      missionCategory: mission.category,
+      missionId: mission.id,
+      missionXp: mission.xp,
+      source,
+    });
+    router.push(getMissionHref(mission));
+  };
+
   if (!isLoaded) {
     return <LoadingHome />;
   }
@@ -343,14 +355,20 @@ export default function HomeScreen() {
         >
           <View className="flex-row items-center justify-between">
             <View className="flex-row flex-1 items-center gap-3">
-              <View className="h-10 w-10 items-center justify-center rounded-full bg-white/18">
+              <Pressable
+                accessibilityLabel="Open profile"
+                accessibilityRole="button"
+                className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
+                hitSlop={10}
+                onPress={() => router.push(profileHref)}
+              >
                 <Image
                   accessibilityLabel="CareerFox mascot"
                   contentFit="contain"
                   source={images.careerFoxLogoMark}
                   style={{ height: 25, width: 25 }}
                 />
-              </View>
+              </Pressable>
               <View className="flex-1">
                 <Text className="text-[13px] font-semibold leading-[17px] text-white/72">
                   Good morning,
@@ -410,7 +428,7 @@ export default function HomeScreen() {
               accessibilityLabel={`Start daily mission: ${dailyMission.title}`}
               accessibilityRole="button"
               className="overflow-hidden rounded-[22px]"
-              onPress={() => router.push(getMissionHref(dailyMission))}
+              onPress={() => startDailyMission(dailyMission, "daily_card")}
               style={{ boxShadow: "0 16px 32px rgba(255, 111, 55, 0.22)" }}
             >
               <LinearGradient
@@ -719,7 +737,14 @@ export default function HomeScreen() {
               accessibilityLabel="Start next mission"
               accessibilityRole="button"
               className="mt-4 min-h-10 overflow-hidden rounded-full"
-              onPress={() => router.push(nextUpHref)}
+              onPress={() => {
+                if (nextMission) {
+                  startDailyMission(nextMission, "next_up_card");
+                  return;
+                }
+
+                router.push(nextUpHref);
+              }}
               style={{ boxShadow: "0 10px 20px rgba(108, 78, 245, 0.18)" }}
             >
               <LinearGradient

@@ -2,7 +2,6 @@ import { useAuth } from "@clerk/expo";
 import { LinearGradient } from "expo-linear-gradient";
 import { Redirect, type Href, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { usePostHog } from "posthog-react-native";
 import {
   Pressable,
   ScrollView,
@@ -16,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SymbolIcon } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import { targetRoles } from "@/data/roles";
+import { trackTargetRoleSelected } from "@/lib/analytics";
 import { useCareerStore } from "@/store/useCareerStore";
 
 const signInHref = "/sign-in" as Href;
@@ -26,7 +26,6 @@ export default function TargetRoleScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height, width } = useWindowDimensions();
-  const posthog = usePostHog();
   const [searchQuery, setSearchQuery] = useState("");
   const selectedRoleId = useCareerStore((state) => state.selectedTargetRole);
   const setSelectedRoleId = useCareerStore(
@@ -59,15 +58,22 @@ export default function TargetRoleScreen() {
       return;
     }
 
-    const selectedRole = targetRoles.find((r) => r.id === selectedRoleId);
-    posthog.capture('onboarding_target_role_selected', {
-      role_id: selectedRoleId,
-      role_title: selectedRole?.title ?? null,
-      role_category: selectedRole?.category ?? null,
-    });
-
     router.push(experienceLevelHref);
-  }, [posthog, router, selectedRoleId]);
+  }, [router, selectedRoleId]);
+
+  const handleRoleSelect = useCallback(
+    (roleId: string) => {
+      const selectedRole = targetRoles.find((role) => role.id === roleId);
+
+      setSelectedRoleId(roleId);
+      trackTargetRoleSelected({
+        roleCategory: selectedRole?.category ?? null,
+        roleId,
+        roleTitle: selectedRole?.title ?? null,
+      });
+    },
+    [setSelectedRoleId],
+  );
 
   if (!isLoaded) {
     return null;
@@ -154,7 +160,7 @@ export default function TargetRoleScreen() {
                 accessibilityState={{ checked: isSelected }}
                 className="flex-row items-center rounded-[24px] border-[2px] bg-white"
                 key={role.id}
-                onPress={() => setSelectedRoleId(role.id)}
+                onPress={() => handleRoleSelect(role.id)}
                 style={{
                   backgroundColor: isSelected ? "#F3F0FF" : colors.white,
                   borderColor: isSelected ? colors.primary : "#EEE1FF",

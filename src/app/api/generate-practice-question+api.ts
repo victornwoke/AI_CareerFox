@@ -1,5 +1,6 @@
 import {
   createPracticeQuestion,
+  enforceAiQuota,
   handleAiRouteError,
   jsonResponse,
   readJsonBody,
@@ -24,6 +25,12 @@ export async function POST(request: Request) {
 
   if (!validation.ok) {
     return jsonResponse({ error: validation.error }, { status: 400 });
+  }
+
+  const quotaResponse = enforceAiQuota(request);
+
+  if (quotaResponse) {
+    return quotaResponse;
   }
 
   try {

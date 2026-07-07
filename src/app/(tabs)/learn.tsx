@@ -31,9 +31,11 @@ import type {
   TargetRole,
 } from "@/types/career";
 
-const applicationsHref = "/applications" as Href;
 const cvHref = "/cv" as Href;
 const interviewHref = "/interview" as Href;
+const learnScreenCategories = learningCategories.filter(
+  (category) => category.id !== "job-search",
+);
 const allDifficulties: InterviewQuestion["difficulty"][] = [
   "beginner",
   "intermediate",
@@ -81,10 +83,6 @@ function ProgressBar({
 }
 
 function getCategoryHref(category: LearningCategory): Href {
-  if (category.destination === "applications") {
-    return applicationsHref;
-  }
-
   if (category.destination === "cv") {
     return cvHref;
   }
@@ -236,7 +234,6 @@ export default function LearnScreen() {
   );
   const categoryCards = useMemo<LearningCategoryCard[]>(() => {
     const cvProgress = getProgressForMissions(["cv"]);
-    const applicationProgress = getProgressForMissions(["applications"]);
     const skillsProgress = getProgressForMissions(["skills"]);
     const selectedRoleLabel = selectedRole?.title ?? "your target role";
     const selectedLevelLabel = selectedExperienceLevel?.label ?? "all levels";
@@ -264,7 +261,7 @@ export default function LearnScreen() {
       total: totalInterviewBankCount,
     };
 
-    return learningCategories.map((category) => {
+    return learnScreenCategories.map((category) => {
       if (category.id === "interview-practice") {
         return {
           ...category,
@@ -304,15 +301,6 @@ export default function LearnScreen() {
             ? `${selectedRoleLabel} guidance for ${selectedLevelLabel}`
             : "Select your experience level",
           progressStatus: null,
-        };
-      }
-
-      if (category.id === "job-search") {
-        return {
-          ...category,
-          countLabel: pluralize(applicationProgress.total, "job task"),
-          progressDetail: `${applicationProgress.completed}/${applicationProgress.total} job tasks complete`,
-          progressStatus: applicationProgress,
         };
       }
 
@@ -549,7 +537,7 @@ export default function LearnScreen() {
               No matching categories
             </Text>
             <Text className="mt-2 text-center text-[14px] font-semibold leading-[21px] text-[#8F92A8]">
-              Try searching for interview, CV, skills, or job search.
+              Try searching for interview, CV, skills, or career guidance.
             </Text>
           </View>
         ) : null}
