@@ -27,7 +27,7 @@ const onboardingSteps: OnboardingStep[] = [
   {
     id: "practice",
     title: ["Practice Interviews.", "Boost Your Skills."],
-    body: "AI-powered mock interviews tailored to your dream role and experience level.",
+    body: "AI-powered mock interviews tailored to your target role and experience level.",
   },
   {
     id: "feedback",
@@ -36,7 +36,7 @@ const onboardingSteps: OnboardingStep[] = [
   },
   {
     id: "progress",
-    title: ["Build Career Habits.", "Land Your Role."],
+    title: ["Build Career Habits.", "Grow Your Plan."],
     body: "Stay consistent with missions, XP, streaks, and application tracking.",
   },
 ];

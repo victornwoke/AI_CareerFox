@@ -2,9 +2,10 @@ import { useUser } from "@clerk/expo";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Linking,
   Pressable,
   ScrollView,
   Text,
@@ -16,11 +17,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SymbolIcon, type SymbolIconName } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import { images } from "@/constants/images";
+import { legalLinks } from "@/constants/legal";
 import { achievements } from "@/data/achievements";
 import { experienceLevels } from "@/data/experienceLevels";
 import { careerMissions } from "@/data/missions";
 import { targetRoles } from "@/data/roles";
+import { useApplicationStore } from "@/store/useApplicationStore";
 import { useCareerStore } from "@/store/useCareerStore";
+import { useInterviewStore } from "@/store/useInterviewStore";
 import { useProgressStore } from "@/store/useProgressStore";
 
 const applicationsHref = "/applications" as Href;
@@ -36,6 +40,15 @@ type ProfileAction = {
   icon: SymbolIconName;
   subtitle: string;
   title: string;
+};
+
+type ExternalProfileAction = {
+  accent: string;
+  background: string;
+  icon: SymbolIconName;
+  subtitle: string;
+  title: string;
+  url: string;
 };
 
 const profileActions: ProfileAction[] = [
@@ -62,6 +75,33 @@ const profileActions: ProfileAction[] = [
     icon: "briefcase.fill",
     subtitle: "Track roles and next steps",
     title: "Applications",
+  },
+];
+
+const supportActions: ExternalProfileAction[] = [
+  {
+    accent: colors.primary,
+    background: colors.softPurple,
+    icon: "lock",
+    subtitle: "How CareerFox handles your data",
+    title: "Privacy Policy",
+    url: legalLinks.privacyPolicyUrl,
+  },
+  {
+    accent: colors.blue,
+    background: colors.softBlue,
+    icon: "doc.text",
+    subtitle: "App rules and responsibilities",
+    title: "Terms of Service",
+    url: legalLinks.termsOfServiceUrl,
+  },
+  {
+    accent: colors.energy,
+    background: colors.softEnergy,
+    icon: "envelope",
+    subtitle: legalLinks.supportEmail,
+    title: "Contact Support",
+    url: legalLinks.supportMailto,
   },
 ];
 
@@ -156,6 +196,19 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { isLoaded, user } = useUser();
   const { width } = useWindowDimensions();
+  const [isResettingLocalState, setIsResettingLocalState] = useState(false);
+  const clearApplicationTestingState = useApplicationStore(
+    (state) => state.clearApplicationTestingState,
+  );
+  const clearCareerTestingState = useCareerStore(
+    (state) => state.clearCareerTestingState,
+  );
+  const clearInterviewTestingState = useInterviewStore(
+    (state) => state.clearInterviewTestingState,
+  );
+  const clearProgressTestingState = useProgressStore(
+    (state) => state.clearProgressTestingState,
+  );
   const selectedExperienceLevelId = useCareerStore(
     (state) => state.selectedExperienceLevel,
   );
@@ -203,6 +256,30 @@ export default function ProfileScreen() {
   const nextAchievement =
     achievements.find((achievement) => !unlockedAchievementIds.includes(achievement.id)) ??
     achievements[0];
+
+  const openExternalAction = (url: string) => {
+    void Linking.openURL(url).catch(() => undefined);
+  };
+
+  const resetLocalTestingState = async () => {
+    if (isResettingLocalState) {
+      return;
+    }
+
+    setIsResettingLocalState(true);
+
+    try {
+      await Promise.all([
+        clearApplicationTestingState(),
+        clearCareerTestingState(),
+        clearInterviewTestingState(),
+        clearProgressTestingState(),
+      ]);
+      router.replace(targetRoleHref);
+    } finally {
+      setIsResettingLocalState(false);
+    }
+  };
 
   if (!isLoaded) {
     return <LoadingProfile />;
@@ -451,6 +528,57 @@ export default function ProfileScreen() {
               {completedMissions} of {missionCount} focused missions completed.
             </Text>
           </Card>
+
+          <Card title="Privacy and support">
+            <View className="gap-3">
+              {supportActions.map((action) => (
+                <Pressable
+                  accessibilityLabel={action.title}
+                  accessibilityRole="button"
+                  className="min-h-[70px] flex-row items-center rounded-[18px] border border-[#F0ECFB] bg-white px-4"
+                  key={action.title}
+                  onPress={() => openExternalAction(action.url)}
+                >
+                  <View
+                    className="h-11 w-11 items-center justify-center rounded-[17px]"
+                    style={{ backgroundColor: action.background }}
+                  >
+                    <SymbolIcon color={action.accent} name={action.icon} size={21} />
+                  </View>
+                  <View className="ml-3 flex-1">
+                    <Text className="text-[14px] font-bold leading-[18px] text-text-primary">
+                      {action.title}
+                    </Text>
+                    <Text className="mt-0.5 text-[12px] font-semibold leading-[16px] text-[#8F92A8]">
+                      {action.subtitle}
+                    </Text>
+                  </View>
+                  <SymbolIcon color="#B8A5E8" name="chevron.right" size={19} />
+                </Pressable>
+              ))}
+            </View>
+          </Card>
+
+          {__DEV__ ? (
+            <Card title="Developer tools">
+              <Pressable
+                accessibilityLabel="Reset local testing state"
+                accessibilityRole="button"
+                className="min-h-[58px] flex-row items-center justify-center rounded-[18px] bg-soft-error px-4"
+                disabled={isResettingLocalState}
+                onPress={() => void resetLocalTestingState()}
+                style={{ opacity: isResettingLocalState ? 0.72 : 1 }}
+              >
+                {isResettingLocalState ? (
+                  <ActivityIndicator color={colors.error} size="small" />
+                ) : (
+                  <Text className="text-[14px] font-bold leading-[19px] text-error">
+                    Reset local testing state
+                  </Text>
+                )}
+              </Pressable>
+            </Card>
+          ) : null}
         </View>
       </ScrollView>
     </View>

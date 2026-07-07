@@ -235,7 +235,7 @@ export default function SignUpScreen() {
               Create your account
             </Text>
             <Text className="mt-3 text-center text-[16px] font-medium leading-[22px] text-white/70">
-              Join 50,000+ career climbers
+              Build confident career habits
             </Text>
           </View>
 

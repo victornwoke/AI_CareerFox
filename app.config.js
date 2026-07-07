@@ -1,7 +1,7 @@
 export default {
   expo: {
-    name: 'AI_CareerFox',
-    slug: 'AI_CareerFox',
+    name: 'CareerFox AI',
+    slug: 'careerfox-ai',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
@@ -9,7 +9,8 @@ export default {
     userInterfaceStyle: 'automatic',
     ios: {
       icon: './assets/expo.icon',
-      bundleIdentifier: 'com.anonymous.AI-CareerFox',
+      bundleIdentifier: 'ai.careerfox.app',
+      supportsTablet: false,
     },
     android: {
       adaptiveIcon: {
@@ -45,6 +46,11 @@ export default {
     extra: {
       posthogProjectToken: process.env.POSTHOG_PROJECT_TOKEN,
       posthogHost: process.env.POSTHOG_HOST || 'https://eu.i.posthog.com',
+      privacyPolicyUrl:
+        process.env.PRIVACY_POLICY_URL || 'https://careerfox.ai/privacy',
+      supportEmail: process.env.SUPPORT_EMAIL || 'support@careerfox.ai',
+      termsOfServiceUrl:
+        process.env.TERMS_OF_SERVICE_URL || 'https://careerfox.ai/terms',
     },
   },
 }

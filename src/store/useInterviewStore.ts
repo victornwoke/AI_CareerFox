@@ -34,6 +34,10 @@ type InterviewStateActions = {
 
 export type InterviewState = InterviewStateData & InterviewStateActions;
 type PersistedInterviewState = Partial<InterviewStateData>;
+type PersistedSafeInterviewState = Omit<
+  InterviewStateData,
+  "answerDraftsByQuestionId"
+>;
 
 const initialInterviewState: InterviewStateData = {
   activeQuestionId: null,
@@ -88,9 +92,8 @@ export const useInterviewStore = create<InterviewState>()(
         ...(persistedState as PersistedInterviewState | undefined),
       }),
       name: "careerfox-interview-store",
-      partialize: (state): InterviewStateData => ({
+      partialize: (state): PersistedSafeInterviewState => ({
         activeQuestionId: state.activeQuestionId,
-        answerDraftsByQuestionId: state.answerDraftsByQuestionId,
         completedQuestionIds: state.completedQuestionIds,
         lastFeedbackSummary: state.lastFeedbackSummary,
         practiceHistory: state.practiceHistory,
