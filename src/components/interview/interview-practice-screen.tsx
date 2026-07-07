@@ -191,8 +191,6 @@ export function InterviewPracticeScreen() {
   const horizontalPadding = isNarrow ? 16 : 20;
   const [selectedCategory, setSelectedCategory] =
     useState<InterviewCategory["id"]>("behavioral");
-  const [selectedDifficulty, setSelectedDifficulty] =
-    useState<InterviewQuestion["difficulty"]>("intermediate");
   const selectedExperienceLevelId = useCareerStore(
     (state) => state.selectedExperienceLevel,
   );
@@ -217,6 +215,9 @@ export function InterviewPracticeScreen() {
       ? allDifficulties
       : (difficultiesByExperienceLevel[selectedExperienceLevelId] ??
         allDifficulties);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<
+    InterviewQuestion["difficulty"]
+  >(() => allowedDifficulties[0] ?? "intermediate");
   const completedQuestionIdSet = useMemo(
     () => new Set(completedQuestionIds),
     [completedQuestionIds],
@@ -230,6 +231,31 @@ export function InterviewPracticeScreen() {
       ),
     [allowedDifficulties, selectedRole],
   );
+  const availableDifficulties = useMemo(() => {
+    const categoryDifficultySet = new Set(
+      roleQuestions
+        .filter((question) => question.category === selectedCategory)
+        .map((question) => question.difficulty),
+    );
+    const categoryDifficulties = allowedDifficulties.filter((difficulty) =>
+      categoryDifficultySet.has(difficulty),
+    );
+
+    return categoryDifficulties.length > 0
+      ? categoryDifficulties
+      : allowedDifficulties;
+  }, [allowedDifficulties, roleQuestions, selectedCategory]);
+  const activeDifficulty = availableDifficulties.includes(selectedDifficulty)
+    ? selectedDifficulty
+    : (availableDifficulties[0] ?? "intermediate");
+  const availableDifficultyOptions = useMemo(
+    () =>
+      difficultyOptions.filter((option) =>
+        availableDifficulties.includes(option.id),
+      ),
+    [availableDifficulties],
+  );
+
   const completedCategories = useMemo(
     () =>
       new Set(
@@ -242,14 +268,13 @@ export function InterviewPracticeScreen() {
   const filteredQuestions = roleQuestions.filter(
     (question) =>
       question.category === selectedCategory &&
-      question.difficulty === selectedDifficulty,
+      question.difficulty === activeDifficulty,
   );
   const nextQuestion =
     filteredQuestions.find(
       (question) => !completedQuestionIdSet.has(question.id),
     ) ??
-    roleQuestions.find((question) => question.category === selectedCategory) ??
-    roleQuestions[0] ??
+    filteredQuestions[0] ??
     null;
   const selectedModule = interviewModules.find(
     (module) => module.category === selectedCategory,
@@ -412,8 +437,8 @@ export function InterviewPracticeScreen() {
             </Text>
 
             <View className="mt-4 flex-row gap-3">
-              {difficultyOptions.map((option) => {
-                const isSelected = selectedDifficulty === option.id;
+              {availableDifficultyOptions.map((option) => {
+                const isSelected = activeDifficulty === option.id;
 
                 return (
                   <Pressable

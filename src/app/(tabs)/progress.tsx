@@ -1,11 +1,12 @@
 import { LinearGradient } from "expo-linear-gradient";
-import type { ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
 import { ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SymbolIcon } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import { interviewQuestions } from "@/data/interviewQuestions";
+import type { InterviewPracticeHistoryItem } from "@/store/useInterviewStore";
 import { useInterviewStore } from "@/store/useInterviewStore";
 import { useProgressStore } from "@/store/useProgressStore";
 
@@ -26,24 +27,167 @@ type CategoryRowProps = {
   value: number;
 };
 
-const fallbackQuestionBars: BarDatum[] = [
-  { day: "Mon", height: 76 },
-  { day: "Tue", height: 114 },
-  { day: "Wed", height: 48 },
-  { day: "Thu", height: 142 },
-  { day: "Fri", height: 94 },
-  { day: "Sat", height: 170 },
-  { day: "Sun", height: 66 },
-];
+type TrendPoint = {
+  day: string;
+  score: number | null;
+};
 
-const trendSegments = [
-  { left: 0, rotate: -22, top: 72, width: 58 },
-  { left: 50, rotate: -14, top: 57, width: 58 },
-  { left: 100, rotate: 14, top: 58, width: 54 },
-  { left: 144, rotate: 31, top: 72, width: 44 },
-];
+type TrendSegment = {
+  left: number;
+  rotate: number;
+  top: number;
+  width: number;
+};
+
+type DayBucket = {
+  count: number;
+  day: string;
+  key: string;
+  scores: number[];
+};
+
+const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const chartMaxBarHeight = 170;
+const trendTop = 12;
+const trendBottom = 118;
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
+
+const getLocalDayKey = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+const getRecentDayBuckets = (dayCount: number): DayBucket[] => {
+  const today = new Date();
+  const buckets: DayBucket[] = [];
+
+  for (let index = dayCount - 1; index >= 0; index -= 1) {
+    const date = new Date(today);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(today.getDate() - index);
+    buckets.push({
+      count: 0,
+      day: dayLabels[date.getDay()],
+      key: getLocalDayKey(date),
+      scores: [],
+    });
+  }
+
+  return buckets;
+};
+
+const getValidPracticeDate = (item: InterviewPracticeHistoryItem) => {
+  const practicedAt = new Date(item.practicedAt);
+
+  return Number.isNaN(practicedAt.getTime()) ? null : practicedAt;
+};
+
+const buildQuestionBars = ({
+  completedQuestionIds,
+  practiceHistory,
+}: {
+  completedQuestionIds: string[];
+  practiceHistory: InterviewPracticeHistoryItem[];
+}): BarDatum[] => {
+  const buckets = getRecentDayBuckets(7);
+  const bucketByKey = new Map(buckets.map((bucket) => [bucket.key, bucket]));
+  const completedQuestionIdSet = new Set(completedQuestionIds);
+  const completionDateByQuestionId = new Map<string, string>();
+
+  [...practiceHistory]
+    .sort((first, second) => {
+      const firstDate = getValidPracticeDate(first)?.getTime() ?? 0;
+      const secondDate = getValidPracticeDate(second)?.getTime() ?? 0;
+
+      return firstDate - secondDate;
+    })
+    .forEach((item) => {
+      const practicedAt = getValidPracticeDate(item);
+
+      if (
+        !practicedAt ||
+        !completedQuestionIdSet.has(item.questionId) ||
+        completionDateByQuestionId.has(item.questionId)
+      ) {
+        return;
+      }
+
+      completionDateByQuestionId.set(item.questionId, getLocalDayKey(practicedAt));
+    });
+
+  const todayKey = buckets[buckets.length - 1]?.key;
+
+  completedQuestionIds.forEach((questionId) => {
+    const bucketKey = completionDateByQuestionId.get(questionId) ?? todayKey;
+
+    if (!bucketKey) {
+      return;
+    }
+
+    const bucket = bucketByKey.get(bucketKey);
+
+    if (bucket) {
+      bucket.count += 1;
+    }
+  });
+
+  const maxCount = Math.max(...buckets.map((bucket) => bucket.count), 0);
+
+  return buckets.map((bucket) => ({
+    day: bucket.day,
+    height:
+      maxCount > 0
+        ? Math.round((bucket.count / maxCount) * chartMaxBarHeight)
+        : 0,
+  }));
+};
+
+const buildScoreTrendPoints = ({
+  practiceHistory,
+  readinessScore,
+}: {
+  practiceHistory: InterviewPracticeHistoryItem[];
+  readinessScore: number;
+}): TrendPoint[] => {
+  const buckets = getRecentDayBuckets(6);
+  const bucketByKey = new Map(buckets.map((bucket) => [bucket.key, bucket]));
+
+  practiceHistory.forEach((item) => {
+    const practicedAt = getValidPracticeDate(item);
+
+    if (!practicedAt || item.readinessScore === undefined) {
+      return;
+    }
+
+    const bucket = bucketByKey.get(getLocalDayKey(practicedAt));
+
+    if (bucket) {
+      bucket.scores.push(clampPercent(item.readinessScore));
+    }
+  });
+
+  if (readinessScore > 0) {
+    buckets[buckets.length - 1]?.scores.push(clampPercent(readinessScore));
+  }
+
+  return buckets.map((bucket) => {
+    if (bucket.scores.length === 0) {
+      return { day: bucket.day, score: null };
+    }
+
+    const totalScore = bucket.scores.reduce((total, score) => total + score, 0);
+
+    return {
+      day: bucket.day,
+      score: Math.round(totalScore / bucket.scores.length),
+    };
+  });
+};
+
+const getTrendY = (score: number) => {
+  const progress = clampPercent(score) / 100;
+
+  return trendBottom - progress * (trendBottom - trendTop);
+};
 
 function ProgressStatCard({ detail, label, value }: ProgressStatCardProps) {
   return (
@@ -137,8 +281,38 @@ function QuestionsChart({ data }: { data: BarDatum[] }) {
   );
 }
 
-function ScoreTrendChart({ width }: { width: number }) {
+function ScoreTrendChart({
+  data,
+  width,
+}: {
+  data: TrendPoint[];
+  width: number;
+}) {
   const compactWidth = Math.max(184, Math.min(240, width - 142));
+  const pointSpacing =
+    data.length > 1 ? compactWidth / Math.max(1, data.length - 1) : 0;
+  const chartPoints = data.map((point, index) => ({
+    ...point,
+    left: index * pointSpacing,
+    top: point.score === null ? null : getTrendY(point.score),
+  }));
+  const visiblePoints = chartPoints.filter(
+    (point): point is typeof point & { top: number } => point.top !== null,
+  );
+  const trendSegments: TrendSegment[] = visiblePoints
+    .slice(0, -1)
+    .map((point, index) => {
+      const nextPoint = visiblePoints[index + 1];
+      const xDistance = nextPoint.left - point.left;
+      const yDistance = nextPoint.top - point.top;
+
+      return {
+        left: point.left,
+        rotate: Math.atan2(yDistance, xDistance) * (180 / Math.PI),
+        top: point.top,
+        width: Math.sqrt(xDistance ** 2 + yDistance ** 2),
+      };
+    });
 
   return (
     <View className="relative mt-6 h-[190px]">
@@ -162,15 +336,25 @@ function ScoreTrendChart({ width }: { width: number }) {
             }}
           />
         ))}
+        {visiblePoints.map((point) => (
+          <View
+            className="absolute h-[9px] w-[9px] rounded-full bg-[#FF6B1A]"
+            key={`${point.day}-${point.left}-${point.top}`}
+            style={{
+              left: point.left - 4,
+              top: point.top - 3,
+            }}
+          />
+        ))}
       </View>
 
       <View className="absolute bottom-0 left-0 right-0 flex-row justify-between pl-[82px] pr-2">
-        {["Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+        {data.map((point) => (
           <Text
             className="w-[44px] text-center text-[13px] font-semibold leading-[18px] text-[#8F92A8]"
-            key={day}
+            key={point.day}
           >
-            {day}
+            {point.day}
           </Text>
         ))}
       </View>
@@ -214,13 +398,17 @@ export default function ProgressScreen() {
   const readinessScore = useProgressStore((state) => state.readinessScore);
   const isNarrow = width < 370;
   const horizontalPadding = isNarrow ? 20 : 24;
-  const answeredQuestions =
-    completedQuestionIds.length > 0 ? completedQuestionIds.length : 75;
-  const avgScore = readinessScore > 0 ? readinessScore : 78;
-  const timeSpentHours =
-    practiceHistory.length > 0
-      ? Math.max(0.2, practiceHistory.length * 0.35).toFixed(1)
-      : "4.2";
+  const questionBars = useMemo(
+    () => buildQuestionBars({ completedQuestionIds, practiceHistory }),
+    [completedQuestionIds, practiceHistory],
+  );
+  const scoreTrendPoints = useMemo(
+    () => buildScoreTrendPoints({ practiceHistory, readinessScore }),
+    [practiceHistory, readinessScore],
+  );
+  const answeredQuestions = completedQuestionIds.length;
+  const avgScore = clampPercent(readinessScore);
+  const timeSpentHours = (practiceHistory.length * 0.35).toFixed(1);
   const behavioralQuestionIds = interviewQuestions
     .filter((question) => question.category === "behavioral")
     .map((question) => question.id);
@@ -228,11 +416,10 @@ export default function ProgressScreen() {
     behavioralQuestionIds.includes(questionId),
   ).length;
   const behavioralScore =
-    completedQuestionIds.length > 0
+    behavioralQuestionIds.length > 0
       ? Math.round((behavioralCompletedCount / behavioralQuestionIds.length) * 100)
-      : 88;
-  const frontendScore =
-    readinessScore > 0 ? clampPercent(readinessScore - 6) : 72;
+      : 0;
+  const frontendScore = clampPercent(readinessScore);
 
   return (
     <View className="flex-1 bg-white">
@@ -304,11 +491,11 @@ export default function ProgressScreen() {
           style={{ paddingHorizontal: horizontalPadding }}
         >
           <ChartCard title="Questions Answered">
-            <QuestionsChart data={fallbackQuestionBars} />
+            <QuestionsChart data={questionBars} />
           </ChartCard>
 
           <ChartCard title="Score Trend">
-            <ScoreTrendChart width={width} />
+            <ScoreTrendChart data={scoreTrendPoints} width={width} />
           </ChartCard>
 
           <ChartCard title="Category Breakdown">

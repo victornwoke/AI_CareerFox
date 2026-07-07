@@ -14,7 +14,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SymbolIcon } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import { targetRoles } from "@/data/roles";
-import { useCareerStore } from "@/store/useCareerStore";
 
 const minCvLength = 80;
 const supportedDocumentTypes = [
@@ -61,10 +60,7 @@ export default function CvScreen() {
   const [jobDescriptionFile, setJobDescriptionFile] =
     useState<UploadedDocument | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const selectedTargetRole = useCareerStore((state) => state.selectedTargetRole);
-  const setSelectedTargetRole = useCareerStore(
-    (state) => state.setSelectedTargetRole,
-  );
+  const [selectedCvRoleId, setSelectedCvRoleId] = useState<string | null>(null);
   const trimmedCv = cvText.trim();
   const trimmedJobDescription = jobDescriptionText.trim();
   const hasCvSource = trimmedCv.length >= minCvLength || cvFile !== null;
@@ -72,8 +68,8 @@ export default function CvScreen() {
     trimmedJobDescription.length > 0 || jobDescriptionFile !== null;
   const canAnalyse = hasCvSource;
   const selectedRole = useMemo(
-    () => targetRoles.find((role) => role.id === selectedTargetRole) ?? null,
-    [selectedTargetRole],
+    () => targetRoles.find((role) => role.id === selectedCvRoleId) ?? null,
+    [selectedCvRoleId],
   );
 
   const pickDocument = async (kind: UploadKind) => {
@@ -119,12 +115,12 @@ export default function CvScreen() {
       return;
     }
 
-    if (selectedTargetRole) {
+    if (selectedCvRoleId) {
       router.push({
         pathname: "/cv/results",
         params: {
           hasJobDescription: hasJobDescriptionSource ? "true" : "false",
-          roleId: selectedTargetRole,
+          roleId: selectedCvRoleId,
         },
       });
       return;
@@ -417,7 +413,7 @@ export default function CvScreen() {
                 accessibilityLabel="Use a general CV review"
                 accessibilityRole="button"
                 className="min-h-[42px] items-center justify-center rounded-full border px-4"
-                onPress={() => setSelectedTargetRole(null)}
+                onPress={() => setSelectedCvRoleId(null)}
                 style={{
                   backgroundColor: selectedRole ? colors.white : colors.primary,
                   borderColor: selectedRole ? "#E8E1FA" : colors.primary,
@@ -432,7 +428,7 @@ export default function CvScreen() {
               </Pressable>
 
               {targetRoles.map((role) => {
-                const isSelected = role.id === selectedTargetRole;
+                const isSelected = role.id === selectedCvRoleId;
 
                 return (
                   <Pressable
@@ -440,7 +436,7 @@ export default function CvScreen() {
                     accessibilityRole="button"
                     className="min-h-[42px] flex-row items-center justify-center rounded-full border px-3"
                     key={role.id}
-                    onPress={() => setSelectedTargetRole(role.id)}
+                    onPress={() => setSelectedCvRoleId(role.id)}
                     style={{
                       backgroundColor: isSelected
                         ? role.iconBackground
