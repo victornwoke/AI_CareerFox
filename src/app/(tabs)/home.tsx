@@ -25,6 +25,8 @@ import type { CareerMission } from "@/types/career";
 const coachHref = "/coach" as Href;
 const learnHref = "/learn" as Href;
 const applicationsHref = "/applications" as Href;
+const cvHref = "/cv" as Href;
+const progressHref = "/progress" as Href;
 const targetRoleHref = "/target-role" as Href;
 
 type QuickAction = {
@@ -79,7 +81,7 @@ const quickActions: QuickAction[] = [
   {
     accent: colors.blue,
     background: "#EEF5FF",
-    href: learnHref,
+    href: progressHref,
     icon: "chart.bar.fill",
     title: "My\nProgress",
   },
@@ -98,7 +100,7 @@ const todayPlan: PlanTask[] = [
   {
     accent: colors.energy,
     background: "#FFF0E0",
-    href: learnHref,
+    href: cvHref,
     icon: "doc.text.fill",
     id: "improve-cv",
     subtitle: "Polish one bullet",
@@ -136,6 +138,10 @@ const getMissionHref = (mission: CareerMission) => {
 
   if (mission.category === "interview") {
     return coachHref;
+  }
+
+  if (mission.category === "cv") {
+    return cvHref;
   }
 
   return learnHref;
@@ -315,17 +321,14 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-white">
       <ScrollView
+        automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F7F4FF]"
         contentContainerStyle={{
-          paddingBottom: insets.bottom + 122,
+          paddingBottom: insets.bottom + 24,
         }}
-        contentInsetAdjustmentBehavior="automatic"
+        contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       >
-        <View
-          className="bg-white"
-          style={{ height: Math.max(insets.top, 44) + 12 }}
-        />
         <LinearGradient
           colors={gradients.primary}
           end={{ x: 1, y: 1 }}
@@ -335,7 +338,7 @@ export default function HomeScreen() {
             borderBottomRightRadius: 48,
             paddingBottom: 32,
             paddingHorizontal: isNarrow ? 20 : 24,
-            paddingTop: 12,
+            paddingTop: Math.max(insets.top + 12, 32),
           }}
         >
           <View className="flex-row items-center justify-between">

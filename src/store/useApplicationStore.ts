@@ -14,9 +14,11 @@ export type ApplicationStatus =
 export type JobApplication = {
   companyName: string;
   createdAt: string;
+  deadline?: string;
   id: string;
   jobUrl?: string;
   location?: string;
+  nextAction?: string;
   notes?: string;
   roleTitle: string;
   source?: string;

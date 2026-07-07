@@ -186,9 +186,13 @@ export default function SignInScreen() {
       className="flex-1 bg-background"
     >
       <ScrollView
+        automaticallyAdjustContentInsets={false}
         className="flex-1"
-        contentContainerStyle={{ minHeight: height, paddingBottom: 32 }}
-        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{
+          minHeight: height,
+          paddingBottom: insets.bottom + 24,
+        }}
+        contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -197,8 +201,8 @@ export default function SignInScreen() {
             className="items-center rounded-b-[48px] px-6"
             style={{
               backgroundColor: colors.primary,
-              height: 300,
-              paddingTop: insets.top + 70,
+              height: 244,
+              paddingTop: Math.max(insets.top + 12, 32),
             }}
           >
             <Image

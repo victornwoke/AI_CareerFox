@@ -22,14 +22,16 @@ export function TabPlaceholder({
   return (
     <View className="flex-1 bg-[#F7F4FF]">
       <ScrollView
+        automaticallyAdjustContentInsets={false}
         className="flex-1"
         contentContainerStyle={{
           flexGrow: 1,
           justifyContent: "center",
-          paddingBottom: insets.bottom + 32,
+          paddingBottom: insets.bottom + 24,
           paddingHorizontal: 24,
-          paddingTop: insets.top + 32,
+          paddingTop: Math.max(insets.top + 12, 32),
         }}
+        contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       >
         <View

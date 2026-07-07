@@ -142,6 +142,17 @@ Match the Figma design closely:
 
 Do not copy the Duolingo product concept. Use the Figma design as the CareerFox AI source of truth.
 
+## Safe Area and Scroll Spacing Rules
+
+Avoid artificial whitespace at the top or bottom of screens.
+
+- Do not add separate spacer views above custom headers.
+- For custom full-bleed headers, set `automaticallyAdjustContentInsets={false}` and `contentInsetAdjustmentBehavior="never"` on the `ScrollView`.
+- Use compact safe-area top padding for custom headers: `Math.max(insets.top - 20, 18)` unless a specific design requires a different value.
+- Use modest bottom scroll padding, usually `insets.bottom + 24`.
+- Do not stack `contentInsetAdjustmentBehavior="automatic"` with manual `paddingTop: insets.top + ...`; that creates double top spacing.
+- If a tab bar is present, only add extra bottom space when content is actually hidden behind the tab bar.
+
 ## Implementation Rules
 
 For every feature:

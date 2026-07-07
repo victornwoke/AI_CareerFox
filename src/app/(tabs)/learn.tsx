@@ -395,11 +395,12 @@ export default function LearnScreen() {
   return (
     <View className="flex-1 bg-[#10B77F]">
       <ScrollView
+        automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F6F2FF]"
         contentContainerStyle={{
-          paddingBottom: insets.bottom + 28,
+          paddingBottom: insets.bottom + 24,
         }}
-        contentInsetAdjustmentBehavior="automatic"
+        contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -410,7 +411,7 @@ export default function LearnScreen() {
             borderBottomRightRadius: 34,
             paddingBottom: 34,
             paddingHorizontal: horizontalPadding,
-            paddingTop: insets.top + 12,
+            paddingTop: Math.max(insets.top + 12, 32),
           }}
         >
           <Text className="text-[26px] font-bold leading-[32px] text-white">

@@ -137,7 +137,10 @@ export function VerificationModal({
       >
         <View
           className="flex-1 items-center px-6"
-          style={{ minHeight: height, paddingTop: insets.top + 126 }}
+          style={{
+            minHeight: height,
+            paddingTop: Math.max(insets.top + 12, 32),
+          }}
         >
           <View className="h-32 w-32 items-center justify-center rounded-full bg-verification-icon-background">
             <SymbolIcon

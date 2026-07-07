@@ -30,7 +30,6 @@ export default function TargetRoleScreen() {
   const setSelectedRoleId = useCareerStore(
     (state) => state.setSelectedTargetRole,
   );
-  const isCompactHeight = height < 780;
 
   const filteredRoles = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -72,13 +71,15 @@ export default function TargetRoleScreen() {
   return (
     <View className="flex-1 bg-background">
       <ScrollView
+        automaticallyAdjustContentInsets={false}
         className="flex-1"
         contentContainerStyle={{
           minHeight: height,
           paddingBottom: insets.bottom + 24,
           paddingHorizontal: width < 360 ? 20 : 24,
-          paddingTop: insets.top + (isCompactHeight ? 22 : 34),
+          paddingTop: Math.max(insets.top + 12, 32),
         }}
+        contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

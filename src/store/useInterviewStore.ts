@@ -15,6 +15,7 @@ export type InterviewPracticeHistoryItem = {
 
 type InterviewStateData = {
   activeQuestionId: string | null;
+  answerDraftsByQuestionId: Record<string, string>;
   completedQuestionIds: string[];
   lastFeedbackSummary: string | null;
   practiceHistory: InterviewPracticeHistoryItem[];
@@ -26,6 +27,7 @@ type InterviewStateActions = {
   markQuestionCompleted: (questionId: string) => void;
   resetInterviewState: () => void;
   setActiveQuestionId: (questionId: string | null) => void;
+  setAnswerDraft: (questionId: string, answer: string) => void;
   setLastFeedbackSummary: (summary: string | null) => void;
   updateInterviewState: (updates: Partial<InterviewStateData>) => void;
 };
@@ -35,6 +37,7 @@ type PersistedInterviewState = Partial<InterviewStateData>;
 
 const initialInterviewState: InterviewStateData = {
   activeQuestionId: null,
+  answerDraftsByQuestionId: {},
   completedQuestionIds: [],
   lastFeedbackSummary: null,
   practiceHistory: [],
@@ -67,6 +70,13 @@ export const useInterviewStore = create<InterviewState>()(
       resetInterviewState: () => set(initialInterviewState),
       setActiveQuestionId: (questionId) =>
         set({ activeQuestionId: questionId }),
+      setAnswerDraft: (questionId, answer) =>
+        set((state) => ({
+          answerDraftsByQuestionId: {
+            ...state.answerDraftsByQuestionId,
+            [questionId]: answer,
+          },
+        })),
       setLastFeedbackSummary: (summary) =>
         set({ lastFeedbackSummary: summary }),
       updateInterviewState: (updates) => set(updates),
@@ -80,6 +90,7 @@ export const useInterviewStore = create<InterviewState>()(
       name: "careerfox-interview-store",
       partialize: (state): InterviewStateData => ({
         activeQuestionId: state.activeQuestionId,
+        answerDraftsByQuestionId: state.answerDraftsByQuestionId,
         completedQuestionIds: state.completedQuestionIds,
         lastFeedbackSummary: state.lastFeedbackSummary,
         practiceHistory: state.practiceHistory,

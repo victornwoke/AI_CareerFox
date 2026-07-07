@@ -4,9 +4,9 @@ import { colors } from "@/constants/colors";
 export default function ProfileScreen() {
   return (
     <TabPlaceholder
-      description="Career goals, progress, and account settings will live here."
-      iconName="person"
-      title="Profile"
+      description="Career badges, milestones, and celebration moments will live here."
+      iconName="rosette"
+      title="Awards"
       accentColor={colors.blue}
     />
   );

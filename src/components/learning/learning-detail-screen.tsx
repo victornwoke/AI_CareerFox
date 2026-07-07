@@ -30,14 +30,15 @@ export function LearningDetailScreen({
   return (
     <View className="flex-1 bg-[#F6F2FF]">
       <ScrollView
+        automaticallyAdjustContentInsets={false}
         className="flex-1"
         contentContainerStyle={{
           flexGrow: 1,
-          paddingBottom: insets.bottom + 32,
+          paddingBottom: insets.bottom + 24,
           paddingHorizontal: 24,
-          paddingTop: insets.top + 18,
+          paddingTop: Math.max(insets.top + 12, 32),
         }}
-        contentInsetAdjustmentBehavior="automatic"
+        contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       >
         <Pressable
