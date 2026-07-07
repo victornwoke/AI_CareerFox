@@ -105,6 +105,8 @@ const supportActions: ExternalProfileAction[] = [
   },
 ];
 
+const careerMissionIds = new Set(careerMissions.map((mission) => mission.id));
+
 const formatCompactNumber = (value: number) => {
   if (value >= 1000) {
     return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}K`;
@@ -244,7 +246,13 @@ export default function ProfileScreen() {
     user?.primaryEmailAddress?.emailAddress.split("@")[0] ??
     "CareerFox learner";
   const emailAddress = user?.primaryEmailAddress?.emailAddress ?? "No email linked";
-  const completedMissions = completedMissionIds.length;
+  const completedMissions = useMemo(
+    () =>
+      new Set(
+        completedMissionIds.filter((missionId) => careerMissionIds.has(missionId)),
+      ).size,
+    [completedMissionIds],
+  );
   const missionCount = careerMissions.length;
   const missionProgress =
     missionCount === 0 ? 0 : Math.round((completedMissions / missionCount) * 100);
@@ -290,7 +298,7 @@ export default function ProfileScreen() {
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F7F4FF]"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       >
@@ -303,7 +311,7 @@ export default function ProfileScreen() {
             borderBottomRightRadius: 48,
             paddingBottom: 32,
             paddingHorizontal: isNarrow ? 20 : 24,
-            paddingTop: Math.max(insets.top + 12, 32),
+            paddingTop: Math.max(insets.top - 20, 18),
           }}
         >
           <View className="flex-row items-center justify-between">

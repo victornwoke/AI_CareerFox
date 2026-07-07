@@ -1,3 +1,16 @@
+import {
+  AiProviderError,
+  getAiProvider,
+} from "@/lib/ai/aiProvider";
+import { careerCoachRules, formatAiContext } from "@/lib/ai/prompts";
+import type { JsonSchema } from "@/lib/ai/schemas";
+import {
+  AI_TEXT_LIMITS,
+  type AiPracticeMode,
+  validateAiPracticeMode,
+  validateBasicAiRequestQuota as checkBasicAiRequestQuota,
+} from "@/lib/ai/validators";
+
 type InterviewCategory = "behavioral" | "technical" | "case" | "hr";
 type LearningCategoryDestination =
   | "applications"
@@ -14,12 +27,15 @@ type PracticeQuestionDifficulty = "beginner" | "intermediate" | "advanced";
 type PracticeQuestionStructure = "STAR" | "XYZ" | "freeform";
 
 export type InterviewFeedbackInput = {
-  userId: string;
-  targetRole: string;
-  experienceLevel: string;
-  question: string;
   answer: string;
+  experienceLevel: string;
+  jobDescription?: string;
+  practiceMode?: AiPracticeMode;
+  question: string;
   category: InterviewCategory;
+  selectedCareerPath?: string;
+  targetRole: string;
+  userId: string;
 };
 
 export type InterviewFeedbackOutput = {
@@ -38,9 +54,13 @@ export type InterviewFeedbackOutput = {
 };
 
 export type CvFeedbackInput = {
-  userId: string;
-  targetRole: string;
   cvText: string;
+  experienceLevel?: string;
+  jobDescription?: string;
+  practiceMode?: AiPracticeMode;
+  selectedCareerPath?: string;
+  targetRole: string;
+  userId: string;
 };
 
 export type CvFeedbackOutput = {
@@ -53,11 +73,14 @@ export type CvFeedbackOutput = {
 };
 
 export type GeneratePracticeQuestionInput = {
-  userId: string;
-  targetRole: string;
-  experienceLevel: string;
   category: InterviewCategory;
+  experienceLevel: string;
+  jobDescription?: string;
+  practiceMode?: AiPracticeMode;
   previousQuestions?: string[];
+  selectedCareerPath?: string;
+  targetRole: string;
+  userId: string;
 };
 
 export type GeneratePracticeQuestionOutput = {
@@ -77,10 +100,13 @@ export type GenerateInterviewQuestionsOutput = {
 };
 
 export type GenerateLearningCategoriesInput = {
-  userId: string;
-  targetRole: string;
-  experienceLevel: string;
   currentCategories?: string[];
+  experienceLevel: string;
+  jobDescription?: string;
+  practiceMode?: AiPracticeMode;
+  selectedCareerPath?: string;
+  targetRole: string;
+  userId: string;
 };
 
 export type GeneratedLearningCategory = {
@@ -97,14 +123,17 @@ export type GenerateLearningCategoriesOutput = {
 };
 
 export type GenerateLessonInput = {
-  userId: string;
-  targetRole: string;
-  experienceLevel: string;
   focus: LessonFocus;
   categoryTitle: string;
+  experienceLevel: string;
+  jobDescription?: string;
   lessonTitle?: string;
+  practiceMode?: AiPracticeMode;
   question?: string;
   expectedStructure?: PracticeQuestionStructure;
+  selectedCareerPath?: string;
+  targetRole: string;
+  userId: string;
 };
 
 export type GenerateLessonOutput = {
@@ -127,28 +156,14 @@ type ApiValidationResult<T> =
       ok: false;
     };
 
-type JsonSchema = {
-  additionalProperties?: boolean;
-  description?: string;
-  enum?: readonly string[];
-  items?: JsonSchema;
-  maximum?: number;
-  minimum?: number;
-  properties?: Record<string, JsonSchema>;
-  required?: readonly string[];
-  type: "array" | "boolean" | "integer" | "number" | "object" | "string";
-};
-
-const geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/interactions";
-const defaultModel = "gemini-3.5-flash";
 const maxRequestBytes = 45_000;
-const maxAiResponseBytes = 14_000;
 const maxUserIdLength = 120;
 const maxTargetRoleLength = 120;
 const maxExperienceLevelLength = 80;
 const maxQuestionLength = 800;
-const maxAnswerLength = 6_000;
-const maxCvTextLength = 24_000;
+const maxAnswerLength = AI_TEXT_LIMITS.answer;
+const maxCvTextLength = AI_TEXT_LIMITS.cvText;
+const maxJobDescriptionLength = AI_TEXT_LIMITS.jobDescription;
 const maxCategoryTitleLength = 120;
 const maxCurrentCategoryLength = 120;
 const maxCurrentCategories = 12;
@@ -156,6 +171,7 @@ const maxGeneratedQuestions = 6;
 const maxLessonTitleLength = 160;
 const maxPreviousQuestionLength = 300;
 const maxPreviousQuestions = 8;
+const maxSelectedCareerPathLength = 120;
 
 const interviewCategories: readonly InterviewCategory[] = [
   "behavioral",
@@ -190,16 +206,6 @@ const practiceQuestionStructures: readonly PracticeQuestionStructure[] = [
   "XYZ",
   "freeform",
 ];
-
-const aiRules = [
-  "Be practical, specific, and role-aware.",
-  "Avoid generic motivational fluff.",
-  "Use STAR for behavioral examples and XYZ when framing measurable impact.",
-  "Suggest measurable impact where honest and relevant.",
-  "Do not promise job offers, interviews, salary increases, visa outcomes, or legal employment advice.",
-  "Be supportive but honest.",
-  "Do not repeat long user-provided text back verbatim.",
-].join("\n- ");
 
 const interviewFeedbackSchema: JsonSchema = {
   additionalProperties: false,
@@ -508,6 +514,17 @@ export function validateInterviewFeedbackInput(
   const question = getRequiredString(record, "question", maxQuestionLength);
   const answer = getRequiredString(record, "answer", maxAnswerLength);
   const category = getCategory(record.category);
+  const selectedCareerPath = getOptionalString(
+    record,
+    "selectedCareerPath",
+    maxSelectedCareerPathLength,
+  );
+  const jobDescription = getOptionalString(
+    record,
+    "jobDescription",
+    maxJobDescriptionLength,
+  );
+  const practiceMode = validateAiPracticeMode(record.practiceMode);
 
   if (!userId.ok) return userId;
   if (!targetRole.ok) return targetRole;
@@ -515,13 +532,19 @@ export function validateInterviewFeedbackInput(
   if (!question.ok) return question;
   if (!answer.ok) return answer;
   if (!category.ok) return category;
+  if (!selectedCareerPath.ok) return selectedCareerPath;
+  if (!jobDescription.ok) return jobDescription;
+  if (!practiceMode.ok) return practiceMode;
 
   return {
     data: {
       answer: answer.data,
       category: category.data,
       experienceLevel: experienceLevel.data,
+      jobDescription: jobDescription.data,
+      practiceMode: practiceMode.data,
       question: question.data,
+      selectedCareerPath: selectedCareerPath.data,
       targetRole: targetRole.data,
       userId: userId.data,
     },
@@ -540,15 +563,39 @@ export function validateCvFeedbackInput(
 
   const userId = getRequiredString(record, "userId", maxUserIdLength);
   const targetRole = getRequiredString(record, "targetRole", maxTargetRoleLength);
+  const experienceLevel = getOptionalString(
+    record,
+    "experienceLevel",
+    maxExperienceLevelLength,
+  );
   const cvText = getRequiredString(record, "cvText", maxCvTextLength);
+  const selectedCareerPath = getOptionalString(
+    record,
+    "selectedCareerPath",
+    maxSelectedCareerPathLength,
+  );
+  const jobDescription = getOptionalString(
+    record,
+    "jobDescription",
+    maxJobDescriptionLength,
+  );
+  const practiceMode = validateAiPracticeMode(record.practiceMode);
 
   if (!userId.ok) return userId;
   if (!targetRole.ok) return targetRole;
+  if (!experienceLevel.ok) return experienceLevel;
   if (!cvText.ok) return cvText;
+  if (!selectedCareerPath.ok) return selectedCareerPath;
+  if (!jobDescription.ok) return jobDescription;
+  if (!practiceMode.ok) return practiceMode;
 
   return {
     data: {
       cvText: cvText.data,
+      experienceLevel: experienceLevel.data,
+      jobDescription: jobDescription.data,
+      practiceMode: practiceMode.data,
+      selectedCareerPath: selectedCareerPath.data,
       targetRole: targetRole.data,
       userId: userId.data,
     },
@@ -573,6 +620,17 @@ export function validateGeneratePracticeQuestionInput(
     maxExperienceLevelLength,
   );
   const category = getCategory(record.category);
+  const selectedCareerPath = getOptionalString(
+    record,
+    "selectedCareerPath",
+    maxSelectedCareerPathLength,
+  );
+  const jobDescription = getOptionalString(
+    record,
+    "jobDescription",
+    maxJobDescriptionLength,
+  );
+  const practiceMode = validateAiPracticeMode(record.practiceMode);
   const previousQuestions = getOptionalStringArray(
     record.previousQuestions,
     maxPreviousQuestions,
@@ -583,13 +641,19 @@ export function validateGeneratePracticeQuestionInput(
   if (!targetRole.ok) return targetRole;
   if (!experienceLevel.ok) return experienceLevel;
   if (!category.ok) return category;
+  if (!selectedCareerPath.ok) return selectedCareerPath;
+  if (!jobDescription.ok) return jobDescription;
+  if (!practiceMode.ok) return practiceMode;
   if (!previousQuestions.ok) return previousQuestions;
 
   return {
     data: {
       category: category.data,
       experienceLevel: experienceLevel.data,
+      jobDescription: jobDescription.data,
+      practiceMode: practiceMode.data,
       previousQuestions: previousQuestions.data,
+      selectedCareerPath: selectedCareerPath.data,
       targetRole: targetRole.data,
       userId: userId.data,
     },
@@ -638,6 +702,17 @@ export function validateGenerateLearningCategoriesInput(
     "experienceLevel",
     maxExperienceLevelLength,
   );
+  const selectedCareerPath = getOptionalString(
+    record,
+    "selectedCareerPath",
+    maxSelectedCareerPathLength,
+  );
+  const jobDescription = getOptionalString(
+    record,
+    "jobDescription",
+    maxJobDescriptionLength,
+  );
+  const practiceMode = validateAiPracticeMode(record.practiceMode);
   const currentCategories = getOptionalStringArray(
     record.currentCategories,
     maxCurrentCategories,
@@ -648,12 +723,18 @@ export function validateGenerateLearningCategoriesInput(
   if (!userId.ok) return userId;
   if (!targetRole.ok) return targetRole;
   if (!experienceLevel.ok) return experienceLevel;
+  if (!selectedCareerPath.ok) return selectedCareerPath;
+  if (!jobDescription.ok) return jobDescription;
+  if (!practiceMode.ok) return practiceMode;
   if (!currentCategories.ok) return currentCategories;
 
   return {
     data: {
       currentCategories: currentCategories.data,
       experienceLevel: experienceLevel.data,
+      jobDescription: jobDescription.data,
+      practiceMode: practiceMode.data,
+      selectedCareerPath: selectedCareerPath.data,
       targetRole: targetRole.data,
       userId: userId.data,
     },
@@ -688,6 +769,17 @@ export function validateGenerateLessonInput(
     "lessonTitle",
     maxLessonTitleLength,
   );
+  const selectedCareerPath = getOptionalString(
+    record,
+    "selectedCareerPath",
+    maxSelectedCareerPathLength,
+  );
+  const jobDescription = getOptionalString(
+    record,
+    "jobDescription",
+    maxJobDescriptionLength,
+  );
+  const practiceMode = validateAiPracticeMode(record.practiceMode);
   const question = getOptionalString(record, "question", maxQuestionLength);
   const expectedStructure = getOptionalStructure(record.expectedStructure);
 
@@ -697,6 +789,9 @@ export function validateGenerateLessonInput(
   if (!focus.ok) return focus;
   if (!categoryTitle.ok) return categoryTitle;
   if (!lessonTitle.ok) return lessonTitle;
+  if (!selectedCareerPath.ok) return selectedCareerPath;
+  if (!jobDescription.ok) return jobDescription;
+  if (!practiceMode.ok) return practiceMode;
   if (!question.ok) return question;
   if (!expectedStructure.ok) return expectedStructure;
 
@@ -706,8 +801,11 @@ export function validateGenerateLessonInput(
       expectedStructure: expectedStructure.data,
       experienceLevel: experienceLevel.data,
       focus: focus.data,
+      jobDescription: jobDescription.data,
       lessonTitle: lessonTitle.data,
+      practiceMode: practiceMode.data,
       question: question.data,
+      selectedCareerPath: selectedCareerPath.data,
       targetRole: targetRole.data,
       userId: userId.data,
     },
@@ -722,11 +820,10 @@ export async function createInterviewFeedback(
     "You are CareerFox AI, a premium career coach for interview practice.",
     "",
     "Rules:",
-    `- ${aiRules}`,
+    `- ${careerCoachRules}`,
     "",
     "Evaluate this interview answer.",
-    `Target role: ${input.targetRole}`,
-    `Experience level: ${input.experienceLevel}`,
+    formatAiContext(input),
     `Question category: ${input.category}`,
     `Question: ${input.question}`,
     `Answer: ${input.answer}`,
@@ -746,10 +843,10 @@ export async function createCvFeedback(
     "You are CareerFox AI, a premium career coach for CV improvement.",
     "",
     "Rules:",
-    `- ${aiRules}`,
+    `- ${careerCoachRules}`,
     "",
     "Review this CV for the target role.",
-    `Target role: ${input.targetRole}`,
+    formatAiContext(input),
     `CV text: ${input.cvText}`,
     "",
     "Return concise JSON only. Focus on honest keyword gaps, weak bullets, stronger replacements, and next actions.",
@@ -771,11 +868,10 @@ export async function createPracticeQuestion(
     "You are CareerFox AI, a practical interview coach.",
     "",
     "Rules:",
-    `- ${aiRules}`,
+    `- ${careerCoachRules}`,
     "",
     "Generate one original interview practice question.",
-    `Target role: ${input.targetRole}`,
-    `Experience level: ${input.experienceLevel}`,
+    formatAiContext(input),
     `Question category: ${input.category}`,
     "Avoid repeating these previous questions:",
     previousQuestions,
@@ -800,11 +896,10 @@ export async function createInterviewQuestions(
     "You are CareerFox AI, a practical interview coach.",
     "",
     "Rules:",
-    `- ${aiRules}`,
+    `- ${careerCoachRules}`,
     "",
     `Generate ${count} original interview practice questions.`,
-    `Target role: ${input.targetRole}`,
-    `Experience level: ${input.experienceLevel}`,
+    formatAiContext(input),
     `Question category: ${input.category}`,
     "Avoid repeating these previous questions:",
     previousQuestions,
@@ -828,11 +923,10 @@ export async function createLearningCategories(
     "You are CareerFox AI, designing structured career learning paths.",
     "",
     "Rules:",
-    `- ${aiRules}`,
+    `- ${careerCoachRules}`,
     "",
     "Generate learning categories for the Learn screen.",
-    `Target role: ${input.targetRole}`,
-    `Experience level: ${input.experienceLevel}`,
+    formatAiContext(input),
     "Existing categories to respect or extend:",
     currentCategories,
     "",
@@ -851,11 +945,10 @@ export async function createLesson(
     "You are CareerFox AI, creating a short teachable career lesson.",
     "",
     "Rules:",
-    `- ${aiRules}`,
+    `- ${careerCoachRules}`,
     "",
     "Generate lesson content for a mobile learning or interview question-start screen.",
-    `Target role: ${input.targetRole}`,
-    `Experience level: ${input.experienceLevel}`,
+    formatAiContext(input),
     `Lesson focus: ${input.focus}`,
     `Category: ${input.categoryTitle}`,
     `Lesson title: ${input.lessonTitle ?? "Choose the best title"}`,
@@ -1075,82 +1168,10 @@ async function fetchGeminiStructuredJson(
   prompt: string,
   schema: JsonSchema,
 ): Promise<unknown> {
-  const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
-
-  if (!apiKey) {
-    throw new PublicApiError(
-      "AI feedback is not configured. Add GEMINI_API_KEY on the server.",
-      503,
-    );
-  }
-
-  const response = await fetch(geminiEndpoint, {
-    body: JSON.stringify({
-      input: prompt,
-      model: process.env.GEMINI_MODEL ?? defaultModel,
-      response_format: {
-        mime_type: "application/json",
-        schema,
-        type: "text",
-      },
-    }),
-    headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-key": apiKey,
-    },
-    method: "POST",
+  return getAiProvider().generateJson({
+    prompt,
+    schema,
   });
-
-  if (!response.ok) {
-    throw new PublicApiError("AI feedback service is unavailable.", 502);
-  }
-
-  const responseBody: unknown = await response.json();
-  const outputText = extractGeminiOutputText(responseBody);
-
-  if (!outputText) {
-    throw new Error("Gemini response did not include JSON output text.");
-  }
-
-  if (outputText.length > maxAiResponseBytes) {
-    throw new Error("Gemini response exceeded the maximum allowed size.");
-  }
-
-  try {
-    return JSON.parse(outputText);
-  } catch {
-    throw new Error("Gemini response was not valid JSON.");
-  }
-}
-
-function extractGeminiOutputText(responseBody: unknown): string | null {
-  const record = asRecord(responseBody);
-
-  if (!record) {
-    return null;
-  }
-
-  if (typeof record.output_text === "string") {
-    return record.output_text;
-  }
-
-  const candidates = record.candidates;
-
-  if (Array.isArray(candidates)) {
-    const firstCandidate = asRecord(candidates[0]);
-    const content = asRecord(firstCandidate?.content);
-    const parts = content?.parts;
-
-    if (Array.isArray(parts)) {
-      const firstPart = asRecord(parts[0]);
-
-      if (typeof firstPart?.text === "string") {
-        return firstPart.text;
-      }
-    }
-  }
-
-  return null;
 }
 
 function normalizeInterviewFeedback(value: unknown): InterviewFeedbackOutput {
@@ -1388,6 +1409,12 @@ function sanitizeKebabId(value: string) {
   return kebabId || "generated-category";
 }
 
+export function validateBasicAiRequestQuota(
+  userId: string,
+): ApiValidationResult<null> {
+  return checkBasicAiRequestQuota(userId);
+}
+
 export class PublicApiError extends Error {
   status: number;
 
@@ -1400,6 +1427,10 @@ export class PublicApiError extends Error {
 
 export function handleAiRouteError(error: unknown) {
   if (error instanceof PublicApiError) {
+    return jsonResponse({ error: error.message }, { status: error.status });
+  }
+
+  if (error instanceof AiProviderError) {
     return jsonResponse({ error: error.message }, { status: error.status });
   }
 

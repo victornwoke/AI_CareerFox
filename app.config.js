@@ -1,3 +1,7 @@
+import legalDefaultsModule from './config/legal-defaults.js'
+
+const { legalDefaults } = legalDefaultsModule
+
 export default {
   expo: {
     name: 'CareerFox AI',
@@ -22,7 +26,7 @@ export default {
       predictiveBackGestureEnabled: false,
     },
     web: {
-      output: 'static',
+      output: 'server',
       favicon: './assets/images/favicon.png',
     },
     plugins: [
@@ -47,10 +51,10 @@ export default {
       posthogProjectToken: process.env.POSTHOG_PROJECT_TOKEN,
       posthogHost: process.env.POSTHOG_HOST || 'https://eu.i.posthog.com',
       privacyPolicyUrl:
-        process.env.PRIVACY_POLICY_URL || 'https://careerfox.ai/privacy',
-      supportEmail: process.env.SUPPORT_EMAIL || 'support@careerfox.ai',
+        process.env.PRIVACY_POLICY_URL || legalDefaults.privacyPolicyUrl,
+      supportEmail: process.env.SUPPORT_EMAIL || legalDefaults.supportEmail,
       termsOfServiceUrl:
-        process.env.TERMS_OF_SERVICE_URL || 'https://careerfox.ai/terms',
+        process.env.TERMS_OF_SERVICE_URL || legalDefaults.termsOfServiceUrl,
     },
   },
 }

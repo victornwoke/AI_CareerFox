@@ -34,6 +34,9 @@ import type {
 const applicationsHref = "/applications" as Href;
 const cvHref = "/cv" as Href;
 const interviewHref = "/interview" as Href;
+const learnScreenCategories = learningCategories.filter(
+  (category) => category.id !== "job-search",
+);
 const allDifficulties: InterviewQuestion["difficulty"][] = [
   "beginner",
   "intermediate",
@@ -236,7 +239,6 @@ export default function LearnScreen() {
   );
   const categoryCards = useMemo<LearningCategoryCard[]>(() => {
     const cvProgress = getProgressForMissions(["cv"]);
-    const applicationProgress = getProgressForMissions(["applications"]);
     const skillsProgress = getProgressForMissions(["skills"]);
     const selectedRoleLabel = selectedRole?.title ?? "your target role";
     const selectedLevelLabel = selectedExperienceLevel?.label ?? "all levels";
@@ -264,7 +266,7 @@ export default function LearnScreen() {
       total: totalInterviewBankCount,
     };
 
-    return learningCategories.map((category) => {
+    return learnScreenCategories.map((category) => {
       if (category.id === "interview-practice") {
         return {
           ...category,
@@ -304,15 +306,6 @@ export default function LearnScreen() {
             ? `${selectedRoleLabel} guidance for ${selectedLevelLabel}`
             : "Select your experience level",
           progressStatus: null,
-        };
-      }
-
-      if (category.id === "job-search") {
-        return {
-          ...category,
-          countLabel: pluralize(applicationProgress.total, "job task"),
-          progressDetail: `${applicationProgress.completed}/${applicationProgress.total} job tasks complete`,
-          progressStatus: applicationProgress,
         };
       }
 

@@ -3,6 +3,7 @@ import {
   handleAiRouteError,
   jsonResponse,
   readJsonBody,
+  validateBasicAiRequestQuota,
   validateGenerateInterviewQuestionsInput,
   validateRequestSize,
 } from "@/lib/server/aiFeedback";
@@ -24,6 +25,12 @@ export async function POST(request: Request) {
 
   if (!validation.ok) {
     return jsonResponse({ error: validation.error }, { status: 400 });
+  }
+
+  const quotaValidation = validateBasicAiRequestQuota(validation.data.userId);
+
+  if (!quotaValidation.ok) {
+    return jsonResponse({ error: quotaValidation.error }, { status: 429 });
   }
 
   try {
