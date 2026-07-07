@@ -114,10 +114,8 @@ const buildQuestionBars = ({
       completionDateByQuestionId.set(item.questionId, getLocalDayKey(practicedAt));
     });
 
-  const todayKey = buckets[buckets.length - 1]?.key;
-
   completedQuestionIds.forEach((questionId) => {
-    const bucketKey = completionDateByQuestionId.get(questionId) ?? todayKey;
+    const bucketKey = completionDateByQuestionId.get(questionId);
 
     if (!bucketKey) {
       return;
@@ -289,6 +287,7 @@ function ScoreTrendChart({
   width: number;
 }) {
   const compactWidth = Math.max(184, Math.min(240, width - 142));
+  const labelWidth = 44;
   const pointSpacing =
     data.length > 1 ? compactWidth / Math.max(1, data.length - 1) : 0;
   const chartPoints = data.map((point, index) => ({
@@ -348,11 +347,15 @@ function ScoreTrendChart({
         ))}
       </View>
 
-      <View className="absolute bottom-0 left-0 right-0 flex-row justify-between pl-[82px] pr-2">
-        {data.map((point) => (
+      <View
+        className="absolute bottom-0 left-0 h-[20px]"
+        style={{ width: compactWidth }}
+      >
+        {chartPoints.map((point) => (
           <Text
-            className="w-[44px] text-center text-[13px] font-semibold leading-[18px] text-[#8F92A8]"
-            key={point.day}
+            className="absolute text-center text-[13px] font-semibold leading-[18px] text-[#8F92A8]"
+            key={`${point.day}-${point.left}`}
+            style={{ left: point.left - labelWidth / 2, width: labelWidth }}
           >
             {point.day}
           </Text>
@@ -409,17 +412,20 @@ export default function ProgressScreen() {
   const answeredQuestions = completedQuestionIds.length;
   const avgScore = clampPercent(readinessScore);
   const timeSpentHours = (practiceHistory.length * 0.35).toFixed(1);
-  const behavioralQuestionIds = interviewQuestions
-    .filter((question) => question.category === "behavioral")
-    .map((question) => question.id);
-  const behavioralCompletedCount = completedQuestionIds.filter((questionId) =>
-    behavioralQuestionIds.includes(questionId),
-  ).length;
-  const behavioralScore =
-    behavioralQuestionIds.length > 0
-      ? Math.round((behavioralCompletedCount / behavioralQuestionIds.length) * 100)
+  const getCategoryScore = (category: "behavioral" | "technical") => {
+    const categoryQuestionIds = interviewQuestions
+      .filter((question) => question.category === category)
+      .map((question) => question.id);
+    const completedCount = completedQuestionIds.filter((questionId) =>
+      categoryQuestionIds.includes(questionId),
+    ).length;
+
+    return categoryQuestionIds.length > 0
+      ? Math.round((completedCount / categoryQuestionIds.length) * 100)
       : 0;
-  const frontendScore = clampPercent(readinessScore);
+  };
+  const behavioralScore = getCategoryScore("behavioral");
+  const technicalScore = getCategoryScore("technical");
 
   return (
     <View className="flex-1 bg-white">
@@ -507,8 +513,8 @@ export default function ProgressScreen() {
               />
               <CategoryRow
                 color={colors.primary}
-                label="Frontend"
-                value={frontendScore}
+                label="Technical"
+                value={technicalScore}
               />
             </View>
           </ChartCard>
