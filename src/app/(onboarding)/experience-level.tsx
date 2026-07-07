@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/constants/colors";
 import { experienceLevels } from "@/data/experienceLevels";
-import { useGoalSetupStore } from "@/store/goalSetupStore";
+import { useCareerStore } from "@/store/useCareerStore";
 
 type ExperienceIcon = {
   background: string;
@@ -47,11 +47,12 @@ export default function ExperienceLevelScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height, width } = useWindowDimensions();
-  const selectedExperienceLevelId = useGoalSetupStore(
-    (state) => state.selectedExperienceLevelId,
+  const selectedExperienceLevelId = useCareerStore(
+    (state) => state.selectedExperienceLevel,
   );
-  const setSelectedExperienceLevelId = useGoalSetupStore(
-    (state) => state.setSelectedExperienceLevelId,
+  const markSetupCompleted = useCareerStore((state) => state.markSetupCompleted);
+  const setSelectedExperienceLevelId = useCareerStore(
+    (state) => state.setSelectedExperienceLevel,
   );
   const isCompactHeight = height < 780;
 
@@ -69,8 +70,9 @@ export default function ExperienceLevelScreen() {
       return;
     }
 
+    markSetupCompleted();
     router.replace(homeHref);
-  }, [router, selectedExperienceLevelId]);
+  }, [markSetupCompleted, router, selectedExperienceLevelId]);
 
   if (!isLoaded) {
     return null;

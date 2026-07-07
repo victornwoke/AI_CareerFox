@@ -1,4 +1,4 @@
-import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,7 +13,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/constants/colors";
+import { SymbolIcon } from "@/components/ui/SymbolIcon";
+import { colors, gradients } from "@/constants/colors";
 
 type VerificationModalProps = {
   email: string;
@@ -139,18 +140,18 @@ export function VerificationModal({
           style={{ minHeight: height, paddingTop: insets.top + 126 }}
         >
           <View className="h-32 w-32 items-center justify-center rounded-full bg-verification-icon-background">
-            <Image
+            <SymbolIcon
               accessibilityLabel="Verification email icon"
-              contentFit="contain"
-              source="sf:envelope"
-              style={{ height: 62, tintColor: colors.primary, width: 62 }}
+              color={colors.primary}
+              name="envelope"
+              size={62}
             />
             <View className="absolute right-8 top-[34px] h-6 w-6 items-center justify-center rounded-full bg-success">
-              <Image
+              <SymbolIcon
                 accessibilityLabel="Verified"
-                contentFit="contain"
-                source="sf:checkmark"
-                style={{ height: 14, tintColor: colors.white, width: 14 }}
+                color={colors.white}
+                name="checkmark"
+                size={14}
               />
             </View>
           </View>
@@ -207,18 +208,25 @@ export function VerificationModal({
             disabled={isSubmitting}
             onPress={() => void submitCode()}
             style={{
-              backgroundColor: colors.primary,
               boxShadow: "0 18px 34px rgba(108, 78, 245, 0.18)",
+              overflow: "hidden",
               opacity: isSubmitting ? 0.84 : 1,
             }}
           >
-            {isSubmitting ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Text className="text-[17px] font-bold text-white">
-                Verify Email
-              </Text>
-            )}
+            <LinearGradient
+              colors={gradients.primary}
+              end={{ x: 1, y: 0.5 }}
+              start={{ x: 0, y: 0.5 }}
+              style={styles.primaryButtonGradient}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <Text className="text-[17px] font-bold text-white">
+                  Verify Email
+                </Text>
+              )}
+            </LinearGradient>
           </Pressable>
 
           <View className="mt-7 flex-row justify-center">
@@ -252,5 +260,12 @@ const styles = StyleSheet.create({
     height: 56,
     textAlign: "center",
     width: 48,
+  },
+  primaryButtonGradient: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 58,
   },
 });

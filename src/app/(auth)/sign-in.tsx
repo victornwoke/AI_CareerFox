@@ -1,6 +1,7 @@
 import { useSignIn } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -8,6 +9,7 @@ import {
   Pressable,
   ScrollView,
   Text,
+  StyleSheet,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -15,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AuthField } from "@/components/auth/AuthField";
 import { VerificationModal } from "@/components/auth/VerificationModal";
-import { colors } from "@/constants/colors";
+import { colors, gradients } from "@/constants/colors";
 import { images } from "@/constants/images";
 import { componentStyles } from "@/constants/theme";
 import {
@@ -265,18 +267,24 @@ export default function SignInScreen() {
 
             <Pressable
               accessibilityRole="button"
-              className="mt-2 items-center justify-center"
               disabled={isAuthLoading}
               onPress={() => void handleSubmit()}
-              style={[componentStyles.primaryButton, {
+              style={[componentStyles.primaryButton, styles.submitButton, {
                 opacity: isAuthLoading ? 0.84 : 1,
               }]}
             >
-              {isLoading ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <Text className="text-[17px] font-bold text-white">Sign In</Text>
-              )}
+              <LinearGradient
+                colors={gradients.primary}
+                end={{ x: 1, y: 0.5 }}
+                start={{ x: 0, y: 0.5 }}
+                style={styles.submitGradient}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text className="text-[17px] font-bold text-white">Sign In</Text>
+                )}
+              </LinearGradient>
             </Pressable>
 
             <View className="my-5 flex-row items-center gap-4">
@@ -330,3 +338,17 @@ export default function SignInScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  submitButton: {
+    marginTop: 8,
+    overflow: "hidden",
+  },
+  submitGradient: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 56,
+  },
+});
