@@ -2,6 +2,7 @@ import { useAuth } from "@clerk/expo";
 import { Image } from "expo-image";
 import { Redirect, type Href, useRouter } from "expo-router";
 import { useCallback } from "react";
+import { usePostHog } from "posthog-react-native";
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -47,9 +48,11 @@ export default function ExperienceLevelScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height, width } = useWindowDimensions();
+  const posthog = usePostHog();
   const selectedExperienceLevelId = useCareerStore(
     (state) => state.selectedExperienceLevel,
   );
+  const selectedTargetRoleId = useCareerStore((state) => state.selectedTargetRole);
   const markSetupCompleted = useCareerStore((state) => state.markSetupCompleted);
   const setSelectedExperienceLevelId = useCareerStore(
     (state) => state.setSelectedExperienceLevel,
@@ -70,9 +73,14 @@ export default function ExperienceLevelScreen() {
       return;
     }
 
+    posthog.capture('onboarding_completed', {
+      experience_level: selectedExperienceLevelId,
+      target_role_id: selectedTargetRoleId,
+    });
+
     markSetupCompleted();
     router.replace(homeHref);
-  }, [markSetupCompleted, router, selectedExperienceLevelId]);
+  }, [markSetupCompleted, posthog, router, selectedExperienceLevelId, selectedTargetRoleId]);
 
   if (!isLoaded) {
     return null;

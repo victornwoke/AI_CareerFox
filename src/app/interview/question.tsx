@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useMemo } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   Pressable,
   ScrollView,
@@ -36,6 +37,7 @@ export default function InterviewQuestionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
+  const posthog = usePostHog();
   const selectedTargetRoleId = useCareerStore(
     (state) => state.selectedTargetRole,
   );
@@ -92,6 +94,14 @@ export default function InterviewQuestionScreen() {
       router.replace(behavioralHref);
       return;
     }
+
+    posthog.capture('interview_answer_submitted', {
+      lesson_id: lesson.id,
+      lesson_number: lesson.lessonNumber,
+      role_id: selectedTargetRoleId,
+      answer_length: answer.trim().length,
+      skipped: false,
+    });
 
     markQuestionCompleted(lesson.id);
     moveToNextLesson();
@@ -282,7 +292,18 @@ export default function InterviewQuestionScreen() {
                 accessibilityLabel="Skip question"
                 accessibilityRole="button"
                 className="rounded-full bg-[#F5F1FF] px-4 py-2"
-                onPress={moveToNextLesson}
+                onPress={() => {
+                    if (lesson) {
+                      posthog.capture('interview_answer_submitted', {
+                        lesson_id: lesson.id,
+                        lesson_number: lesson.lessonNumber,
+                        role_id: selectedTargetRoleId,
+                        answer_length: 0,
+                        skipped: true,
+                      });
+                    }
+                    moveToNextLesson();
+                  }}
               >
                 <Text className="text-[14px] font-bold leading-[18px] text-primary">
                   Skip

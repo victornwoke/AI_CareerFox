@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   Pressable,
   ScrollView,
@@ -53,6 +54,7 @@ export default function CvScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const posthog = usePostHog();
   const isNarrow = width < 370;
   const [cvText, setCvText] = useState("");
   const [jobDescriptionText, setJobDescriptionText] = useState("");
@@ -114,6 +116,13 @@ export default function CvScreen() {
     if (!canAnalyse) {
       return;
     }
+
+    posthog.capture('cv_analysis_started', {
+      has_job_description: hasJobDescriptionSource,
+      cv_input_type: cvFile ? 'file' : 'text',
+      cv_text_length: trimmedCv.length,
+      target_role_id: selectedCvRoleId,
+    });
 
     if (selectedCvRoleId) {
       router.push({

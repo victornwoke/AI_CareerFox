@@ -2,6 +2,7 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useMemo } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   Pressable,
   ScrollView,
@@ -34,6 +35,7 @@ export default function LessonIntroScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
+  const posthog = usePostHog();
   const selectedTargetRoleId = useCareerStore(
     (state) => state.selectedTargetRole,
   );
@@ -57,6 +59,12 @@ export default function LessonIntroScreen() {
   const startLesson = () => {
     if (lesson) {
       setActiveQuestionId(lesson.id);
+      posthog.capture('interview_practice_started', {
+        lesson_id: lesson.id,
+        lesson_number: lesson.lessonNumber,
+        role_id: selectedTargetRoleId,
+        expected_structure: lesson.expectedStructure,
+      });
     }
 
     router.push(questionHref);
