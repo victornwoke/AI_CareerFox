@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SymbolIcon } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import { targetRoles } from "@/data/roles";
-import { useGoalSetupStore } from "@/store/goalSetupStore";
+import { useCareerStore } from "@/store/useCareerStore";
 
 const signInHref = "/sign-in" as Href;
 const experienceLevelHref = "/experience-level" as Href;
@@ -26,8 +26,10 @@ export default function TargetRoleScreen() {
   const insets = useSafeAreaInsets();
   const { height, width } = useWindowDimensions();
   const [searchQuery, setSearchQuery] = useState("");
-  const selectedRoleId = useGoalSetupStore((state) => state.selectedRoleId);
-  const setSelectedRoleId = useGoalSetupStore((state) => state.setSelectedRoleId);
+  const selectedRoleId = useCareerStore((state) => state.selectedTargetRole);
+  const setSelectedRoleId = useCareerStore(
+    (state) => state.setSelectedTargetRole,
+  );
   const isCompactHeight = height < 780;
 
   const filteredRoles = useMemo(() => {
