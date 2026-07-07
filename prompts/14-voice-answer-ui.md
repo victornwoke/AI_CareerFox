@@ -10,7 +10,7 @@ Read AGENTS.md first and follow it strictly.
 
 Implement the Voice Answer / AI Interview Coach screen from the Figma design:
 
-https://www.figma.com/make/NURw8HrKJTKdj2HV7DtffN/Mobile-App-Interface-Design?t=HwV0Gi3ZDNDmbpwy-1
+<https://www.figma.com/make/NURw8HrKJTKdj2HV7DtffN/Mobile-App-Interface-Design?t=HwV0Gi3ZDNDmbpwy-1>
 
 ## Route
 
@@ -33,9 +33,7 @@ app/interview/voice.tsx
   - Notes
 - feedback summary area after answer
 
-## MVP behaviour
-
-For MVP:
+## MVP
 
 - no real video call
 - no real camera

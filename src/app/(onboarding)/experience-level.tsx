@@ -85,13 +85,15 @@ export default function ExperienceLevelScreen() {
   return (
     <View className="flex-1 bg-background">
       <ScrollView
+        automaticallyAdjustContentInsets={false}
         className="flex-1"
         contentContainerStyle={{
           minHeight: height,
           paddingBottom: insets.bottom + 24,
           paddingHorizontal: width < 360 ? 20 : 24,
-          paddingTop: insets.top + (isCompactHeight ? 22 : 34),
+          paddingTop: Math.max(insets.top + 12, 32),
         }}
+        contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       >
         <View className="flex-row gap-3 overflow-hidden rounded-full">

@@ -3,7 +3,7 @@ import { Redirect, Tabs, type Href } from "expo-router";
 import type { BottomTabBarProps } from "expo-router/tabs";
 import { Pressable, Text, type ColorValue, View } from "react-native";
 
-import { SymbolIcon } from "@/components/ui/SymbolIcon";
+import { SymbolIcon, type SymbolIconName } from "@/components/ui/SymbolIcon";
 import { colors } from "@/constants/colors";
 
 const signInHref = "/sign-in" as Href;
@@ -30,6 +30,10 @@ function CareerFoxTabBar({
         {state.routes.map((route, index) => {
           const isFocused = state.index === index;
           const { options } = descriptors[route.key];
+          if (route.name === "profile") {
+            return null;
+          }
+
           const label =
             typeof options.tabBarLabel === "string"
               ? options.tabBarLabel
@@ -96,15 +100,48 @@ function CareerFoxTabBar({
   );
 }
 
+const tabIconNames = {
+  "book.closed": {
+    focused: "book.closed.fill",
+    unfocused: "book.closed",
+  },
+  briefcase: {
+    focused: "briefcase.fill",
+    unfocused: "briefcase",
+  },
+  "chart.line.uptrend.xyaxis": {
+    focused: "chart.line.uptrend.xyaxis",
+    unfocused: "chart.line.uptrend.xyaxis",
+  },
+  house: {
+    focused: "house.fill",
+    unfocused: "house",
+  },
+  mic: {
+    focused: "mic.fill",
+    unfocused: "mic",
+  },
+  person: {
+    focused: "person.fill",
+    unfocused: "person",
+  },
+  rosette: {
+    focused: "rosette",
+    unfocused: "rosette",
+  },
+} satisfies Record<string, { focused: SymbolIconName; unfocused: SymbolIconName }>;
+
 type TabIconProps = {
   color: ColorValue;
   focused: boolean;
-  name: string;
+  name: keyof typeof tabIconNames;
   size: number;
 };
 
 function TabIcon({ color, focused, name, size }: TabIconProps) {
-  const symbolName = focused ? `${name}.fill` : name;
+  const symbolName = focused
+    ? tabIconNames[name].focused
+    : tabIconNames[name].unfocused;
 
   return (
     <SymbolIcon
@@ -150,28 +187,18 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="learn"
+        name="progress"
         options={{
-          tabBarAccessibilityLabel: "Learn tab",
+          tabBarAccessibilityLabel: "Progress tab",
           tabBarIcon: ({ color, focused, size }) => (
             <TabIcon
               color={color}
               focused={focused}
-              name="book.closed"
+              name="chart.line.uptrend.xyaxis"
               size={size}
             />
           ),
-          title: "Learn",
-        }}
-      />
-      <Tabs.Screen
-        name="coach"
-        options={{
-          tabBarAccessibilityLabel: "Coach tab",
-          tabBarIcon: ({ color, focused, size }) => (
-            <TabIcon color={color} focused={focused} name="mic" size={size} />
-          ),
-          title: "Coach",
+          title: "Progress",
         }}
       />
       <Tabs.Screen
@@ -190,13 +217,34 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="learn"
+        options={{
+          tabBarAccessibilityLabel: "Learn tab",
+          tabBarIcon: ({ color, focused, size }) => (
+            <TabIcon
+              color={color}
+              focused={focused}
+              name="book.closed"
+              size={size}
+            />
+          ),
+          title: "Learn",
+        }}
+      />
+      <Tabs.Screen
+        name="coach"
+        options={{
+          tabBarAccessibilityLabel: "Practice tab",
+          tabBarIcon: ({ color, focused, size }) => (
+            <TabIcon color={color} focused={focused} name="mic" size={size} />
+          ),
+          title: "Practice",
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
-          tabBarAccessibilityLabel: "Profile tab",
-          tabBarIcon: ({ color, focused, size }) => (
-            <TabIcon color={color} focused={focused} name="person" size={size} />
-          ),
-          title: "Profile",
+          href: null,
         }}
       />
     </Tabs>

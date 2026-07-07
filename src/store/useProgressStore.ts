@@ -25,6 +25,7 @@ type ProgressStateActions = {
 };
 
 export type ProgressState = ProgressStateData & ProgressStateActions;
+type PersistedProgressState = Partial<ProgressStateData>;
 
 const initialProgressState: ProgressStateData = {
   coins: 0,
@@ -83,6 +84,11 @@ export const useProgressStore = create<ProgressState>()(
         })),
     }),
     {
+      merge: (persistedState, currentState): ProgressState => ({
+        ...currentState,
+        ...initialProgressState,
+        ...(persistedState as PersistedProgressState | undefined),
+      }),
       name: "careerfox-progress-store",
       partialize: (state): ProgressStateData => ({
         coins: state.coins,
@@ -92,6 +98,7 @@ export const useProgressStore = create<ProgressState>()(
         unlockedAchievementIds: state.unlockedAchievementIds,
         xp: state.xp,
       }),
+      skipHydration: true,
       storage: createJSONStorage(() => careerFoxStorage),
     },
   ),

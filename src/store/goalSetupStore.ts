@@ -102,16 +102,12 @@ export const useGoalSetupStore = create<GoalSetupState>()(
         selectedExperienceLevelId: state.selectedExperienceLevelId,
         selectedRoleId: state.selectedRoleId,
       }),
+      skipHydration: true,
       storage: createJSONStorage(() => goalSetupStorage),
     },
   ),
 );
 
 export function setGoalSetupStorageUserId(userId: string | null) {
-  if (goalSetupStorageUserId === userId) {
-    return;
-  }
-
   goalSetupStorageUserId = userId;
-  void useGoalSetupStore.persist.rehydrate();
 }

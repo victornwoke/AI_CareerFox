@@ -1,9 +1,11 @@
+import type { SymbolIconName } from "@/components/ui/SymbolIcon";
+
 export type TargetRole = {
   id: string;
   title: string;
   category: "tech" | "product" | "data" | "design" | "business" | "marketing";
   description: string;
-  icon: string;
+  icon: SymbolIconName;
   iconBackground: string;
   iconColor: string;
   popularKeywords: string[];
@@ -47,6 +49,15 @@ export type InterviewCategory = {
   id: InterviewQuestion["category"];
   title: string;
   description: string;
+  icon: SymbolIconName;
+  iconBackground: string;
+  iconColor: string;
+};
+
+export type InterviewQuestionBankCount = {
+  base: number;
+  byExperienceLevel: Partial<Record<string, number>>;
+  roleCategoryBonus?: Partial<Record<TargetRole["category"], number>>;
 };
 
 export type CvTip = {
@@ -55,4 +66,20 @@ export type CvTip = {
   category: "impact" | "format" | "keywords" | "experience" | "proofreading";
   description: string;
   example: string;
+};
+
+export type LearningCategoryDestination =
+  | "applications"
+  | "cv"
+  | "detail"
+  | "interview";
+
+export type LearningCategory = {
+  id: string;
+  title: string;
+  description: string;
+  icon: SymbolIconName;
+  iconBackground: string;
+  iconColor: string;
+  destination: LearningCategoryDestination;
 };
