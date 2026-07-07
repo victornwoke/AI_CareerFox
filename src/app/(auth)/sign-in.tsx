@@ -1,5 +1,6 @@
 import { useSignIn } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
@@ -32,6 +33,7 @@ export default function SignInScreen() {
   const router = useRouter();
   const { fetchStatus, signIn } = useSignIn();
   const { startSocialAuth } = useSocialAuth();
+  const posthog = usePostHog();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [email, setEmail] = useState("");
@@ -57,6 +59,12 @@ export default function SignInScreen() {
     if (finalizeError) {
       return getClerkErrorMessage(finalizeError);
     }
+
+    const userId = signIn.createdSessionId;
+    if (userId) {
+      posthog.identify(userId, {});
+    }
+    posthog.capture('user_signed_in', { method: 'email' });
 
     if (!didNavigate) {
       router.replace(goalSetupHref);
@@ -175,6 +183,8 @@ export default function SignInScreen() {
 
     if (nextError) {
       setError(nextError);
+    } else {
+      posthog.capture('user_signed_in', { method: provider.toLowerCase() });
     }
 
     setSocialLoadingProvider(null);

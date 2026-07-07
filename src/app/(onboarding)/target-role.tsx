@@ -2,6 +2,7 @@ import { useAuth } from "@clerk/expo";
 import { LinearGradient } from "expo-linear-gradient";
 import { Redirect, type Href, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   Pressable,
   ScrollView,
@@ -25,6 +26,7 @@ export default function TargetRoleScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height, width } = useWindowDimensions();
+  const posthog = usePostHog();
   const [searchQuery, setSearchQuery] = useState("");
   const selectedRoleId = useCareerStore((state) => state.selectedTargetRole);
   const setSelectedRoleId = useCareerStore(
@@ -57,8 +59,15 @@ export default function TargetRoleScreen() {
       return;
     }
 
+    const selectedRole = targetRoles.find((r) => r.id === selectedRoleId);
+    posthog.capture('onboarding_target_role_selected', {
+      role_id: selectedRoleId,
+      role_title: selectedRole?.title ?? null,
+      role_category: selectedRole?.category ?? null,
+    });
+
     router.push(experienceLevelHref);
-  }, [router, selectedRoleId]);
+  }, [posthog, router, selectedRoleId]);
 
   if (!isLoaded) {
     return null;

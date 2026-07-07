@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   Alert,
   Pressable,
@@ -73,6 +74,7 @@ function Field({
 export default function NewApplicationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const addApplication = useApplicationStore((state) => state.addApplication);
   const [companyName, setCompanyName] = useState("");
   const [roleTitle, setRoleTitle] = useState("");
@@ -112,6 +114,13 @@ export default function NewApplicationScreen() {
       source: optionalValue(source),
       status,
       updatedAt: now,
+    });
+
+    posthog.capture('application_created', {
+      status,
+      has_job_url: !!optionalValue(jobUrl),
+      has_deadline: !!optionalValue(deadline),
+      source: optionalValue(source) ?? 'not_specified',
     });
 
     router.replace(`/applications/${id}` as Href);
