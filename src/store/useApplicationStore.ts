@@ -43,6 +43,7 @@ type ApplicationStateActions = {
 };
 
 export type ApplicationState = ApplicationStateData & ApplicationStateActions;
+type PersistedApplicationState = Partial<ApplicationStateData>;
 
 const initialApplicationState: ApplicationStateData = {
   activeApplicationId: null,
@@ -90,11 +91,17 @@ export const useApplicationStore = create<ApplicationState>()(
       updateApplicationState: (updates) => set(updates),
     }),
     {
+      merge: (persistedState, currentState): ApplicationState => ({
+        ...currentState,
+        ...initialApplicationState,
+        ...(persistedState as PersistedApplicationState | undefined),
+      }),
       name: "careerfox-application-store",
       partialize: (state): ApplicationStateData => ({
         activeApplicationId: state.activeApplicationId,
         applications: state.applications,
       }),
+      skipHydration: true,
       storage: createJSONStorage(() => careerFoxStorage),
     },
   ),

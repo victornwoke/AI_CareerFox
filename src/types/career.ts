@@ -1,9 +1,11 @@
+import type { SymbolIconName } from "@/components/ui/SymbolIcon";
+
 export type TargetRole = {
   id: string;
   title: string;
   category: "tech" | "product" | "data" | "design" | "business" | "marketing";
   description: string;
-  icon: string;
+  icon: SymbolIconName;
   iconBackground: string;
   iconColor: string;
   popularKeywords: string[];

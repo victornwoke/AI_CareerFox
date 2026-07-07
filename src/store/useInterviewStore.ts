@@ -31,6 +31,7 @@ type InterviewStateActions = {
 };
 
 export type InterviewState = InterviewStateData & InterviewStateActions;
+type PersistedInterviewState = Partial<InterviewStateData>;
 
 const initialInterviewState: InterviewStateData = {
   activeQuestionId: null,
@@ -71,6 +72,11 @@ export const useInterviewStore = create<InterviewState>()(
       updateInterviewState: (updates) => set(updates),
     }),
     {
+      merge: (persistedState, currentState): InterviewState => ({
+        ...currentState,
+        ...initialInterviewState,
+        ...(persistedState as PersistedInterviewState | undefined),
+      }),
       name: "careerfox-interview-store",
       partialize: (state): InterviewStateData => ({
         activeQuestionId: state.activeQuestionId,
@@ -78,6 +84,7 @@ export const useInterviewStore = create<InterviewState>()(
         lastFeedbackSummary: state.lastFeedbackSummary,
         practiceHistory: state.practiceHistory,
       }),
+      skipHydration: true,
       storage: createJSONStorage(() => careerFoxStorage),
     },
   ),

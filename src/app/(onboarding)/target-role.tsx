@@ -200,12 +200,11 @@ export default function TargetRoleScreen() {
 
         <Pressable
           accessibilityRole="button"
-          className="mt-7 min-h-16 items-center justify-center rounded-[18px]"
+          className="mt-7 min-h-16 items-center justify-center"
           disabled={!selectedRoleId}
           onPress={handleContinue}
           style={{
             boxShadow: "0 12px 24px rgba(108, 78, 245, 0.22)",
-            overflow: "hidden",
             opacity: selectedRoleId ? 1 : 0.72,
           }}
         >
@@ -216,9 +215,11 @@ export default function TargetRoleScreen() {
             style={{
               alignItems: "center",
               alignSelf: "stretch",
+              borderRadius: 18,
               flex: 1,
               justifyContent: "center",
               minHeight: 64,
+              overflow: "hidden",
             }}
           >
             <Text className="text-[17px] font-bold leading-[24px] text-white">

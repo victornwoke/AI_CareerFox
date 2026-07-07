@@ -269,9 +269,13 @@ export default function SignInScreen() {
               accessibilityRole="button"
               disabled={isAuthLoading}
               onPress={() => void handleSubmit()}
-              style={[componentStyles.primaryButton, styles.submitButton, {
-                opacity: isAuthLoading ? 0.84 : 1,
-              }]}
+              style={[
+                componentStyles.primaryButton,
+                styles.submitButton,
+                {
+                  opacity: isAuthLoading ? 0.84 : 1,
+                },
+              ]}
             >
               <LinearGradient
                 colors={gradients.primary}
@@ -342,13 +346,14 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   submitButton: {
     marginTop: 8,
-    overflow: "hidden",
   },
   submitGradient: {
     alignItems: "center",
     alignSelf: "stretch",
+    borderRadius: 18,
     flex: 1,
     justifyContent: "center",
     minHeight: 56,
+    overflow: "hidden",
   },
 });

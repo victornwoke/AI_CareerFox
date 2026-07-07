@@ -23,6 +23,7 @@ type CareerStateActions = {
 };
 
 export type CareerState = CareerStateData & CareerStateActions;
+type PersistedCareerState = Partial<CareerStateData>;
 
 const initialCareerState: CareerStateData = {
   preferredPracticeMode: "text",
@@ -49,6 +50,11 @@ export const useCareerStore = create<CareerState>()(
       updateCareerState: (updates) => set(updates),
     }),
     {
+      merge: (persistedState, currentState): CareerState => ({
+        ...currentState,
+        ...initialCareerState,
+        ...(persistedState as PersistedCareerState | undefined),
+      }),
       name: "careerfox-career-store",
       partialize: (state): CareerStateData => ({
         preferredPracticeMode: state.preferredPracticeMode,
@@ -56,6 +62,7 @@ export const useCareerStore = create<CareerState>()(
         selectedTargetRole: state.selectedTargetRole,
         setupCompleted: state.setupCompleted,
       }),
+      skipHydration: true,
       storage: createJSONStorage(() => careerFoxStorage),
     },
   ),

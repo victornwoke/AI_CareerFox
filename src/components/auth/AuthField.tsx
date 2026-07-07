@@ -6,12 +6,12 @@ import {
   View,
 } from "react-native";
 
-import { SymbolIcon } from "@/components/ui/SymbolIcon";
+import { SymbolIcon, type SymbolIconName } from "@/components/ui/SymbolIcon";
 import { colors } from "@/constants/colors";
 import { componentStyles } from "@/constants/theme";
 
 type AuthFieldProps = {
-  icon: string;
+  icon: SymbolIconName;
   onChangeText: (value: string) => void;
   placeholder: string;
   secureTextEntry?: boolean;

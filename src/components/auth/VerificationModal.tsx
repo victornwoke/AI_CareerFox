@@ -204,12 +204,11 @@ export function VerificationModal({
 
           <Pressable
             accessibilityRole="button"
-            className="mt-9 h-[58px] w-full items-center justify-center rounded-[16px]"
+            className="mt-9 h-[58px] w-full items-center justify-center"
             disabled={isSubmitting}
             onPress={() => void submitCode()}
             style={{
               boxShadow: "0 18px 34px rgba(108, 78, 245, 0.18)",
-              overflow: "hidden",
               opacity: isSubmitting ? 0.84 : 1,
             }}
           >
@@ -264,8 +263,10 @@ const styles = StyleSheet.create({
   primaryButtonGradient: {
     alignItems: "center",
     alignSelf: "stretch",
+    borderRadius: 16,
     flex: 1,
     justifyContent: "center",
     minHeight: 58,
+    overflow: "hidden",
   },
 });

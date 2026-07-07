@@ -3,7 +3,7 @@ import { Redirect, Tabs, type Href } from "expo-router";
 import type { BottomTabBarProps } from "expo-router/tabs";
 import { Pressable, Text, type ColorValue, View } from "react-native";
 
-import { SymbolIcon } from "@/components/ui/SymbolIcon";
+import { SymbolIcon, type SymbolIconName } from "@/components/ui/SymbolIcon";
 import { colors } from "@/constants/colors";
 
 const signInHref = "/sign-in" as Href;
@@ -96,15 +96,40 @@ function CareerFoxTabBar({
   );
 }
 
+const tabIconNames = {
+  "book.closed": {
+    focused: "book.closed.fill",
+    unfocused: "book.closed",
+  },
+  briefcase: {
+    focused: "briefcase.fill",
+    unfocused: "briefcase",
+  },
+  house: {
+    focused: "house.fill",
+    unfocused: "house",
+  },
+  mic: {
+    focused: "mic.fill",
+    unfocused: "mic",
+  },
+  person: {
+    focused: "person.fill",
+    unfocused: "person",
+  },
+} satisfies Record<string, { focused: SymbolIconName; unfocused: SymbolIconName }>;
+
 type TabIconProps = {
   color: ColorValue;
   focused: boolean;
-  name: string;
+  name: keyof typeof tabIconNames;
   size: number;
 };
 
 function TabIcon({ color, focused, name, size }: TabIconProps) {
-  const symbolName = focused ? `${name}.fill` : name;
+  const symbolName = focused
+    ? tabIconNames[name].focused
+    : tabIconNames[name].unfocused;
 
   return (
     <SymbolIcon

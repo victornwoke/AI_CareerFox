@@ -1,13 +1,13 @@
 import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { SymbolIcon } from "@/components/ui/SymbolIcon";
+import { SymbolIcon, type SymbolIconName } from "@/components/ui/SymbolIcon";
 import { colors } from "@/constants/colors";
 
 type TabPlaceholderProps = {
   accentColor?: string;
   description: string;
-  iconName: string;
+  iconName: SymbolIconName;
   title: string;
 };
 
