@@ -194,12 +194,8 @@ function mapGeminiHttpError(
   }
 
   if (status >= 400) {
-    const trimmedMessage = upstreamMessage.trim();
-
     return new AiProviderError(
-      trimmedMessage.length > 0
-        ? trimmedMessage
-        : "CareerFox AI could not process this request right now.",
+      "CareerFox AI could not process this request right now.",
       400,
     );
   }

@@ -20,7 +20,10 @@ export type AiProvider = {
 function isRetriableProviderError(error: unknown): boolean {
   return (
     error instanceof AiProviderError &&
-    (error.status === 429 || error.status === 502 || error.status === 504)
+    (error.status === 429 ||
+      error.status === 502 ||
+      error.status === 503 ||
+      error.status === 504)
   );
 }
 

@@ -119,7 +119,10 @@ async function fetchWithTextModel(
 
       if (!response.ok) {
         const providerError = await mapOpenRouterHttpError(response);
-        if (isRetriableStatus(response.status)) {
+        if (
+          isRetriableStatus(response.status) ||
+          (response.status >= 400 && response.status < 500)
+        ) {
           lastError = providerError;
           continue;
         }
@@ -138,9 +141,11 @@ async function fetchWithTextModel(
       }
 
       if (text.length > maxAiResponseBytes) {
-        throw new Error(
+        lastError = new AiProviderError(
           "OpenRouter response exceeded the maximum allowed size.",
+          502,
         );
+        continue;
       }
 
       try {
@@ -154,7 +159,10 @@ async function fetchWithTextModel(
       }
     } catch (err) {
       if (err instanceof AiProviderError) {
-        if (isRetriableStatus(err.status)) {
+        if (
+          isRetriableStatus(err.status) ||
+          (err.status >= 400 && err.status < 500)
+        ) {
           lastError = err;
           continue;
         }
@@ -191,25 +199,30 @@ async function fetchWithVisionModel(
   for (const model of VISION_MODELS) {
     try {
       // Build content array with text and images
-      const content: Array<{
-        type: string;
-        text?: string;
-        image?: string;
-        media_type?: string;
-      }> = [{ type: "text", text: prompt }];
+      const content: (
+        | { type: "text"; text: string }
+        | { type: "image_url"; image_url: { url: string } }
+        | { type: "file"; file: { file_data: string; filename: string } }
+      )[] = [{ type: "text", text: prompt }];
 
       for (const file of inlineFiles) {
-        // Convert file to base64 data URL format for vision models
-        if (
-          file.mimeType.startsWith("image/") ||
-          file.mimeType === "application/pdf" ||
-          file.mimeType ===
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ) {
+        const dataUri = `data:${file.mimeType};base64,${file.data}`;
+
+        if (file.mimeType.startsWith("image/")) {
           content.push({
-            type: "image",
-            image: file.data,
-            media_type: file.mimeType,
+            type: "image_url",
+            image_url: { url: dataUri },
+          });
+          continue;
+        }
+
+        if (file.mimeType === "application/pdf") {
+          content.push({
+            type: "file",
+            file: {
+              file_data: dataUri,
+              filename: "uploaded-document.pdf",
+            },
           });
         }
       }
@@ -237,7 +250,10 @@ async function fetchWithVisionModel(
 
       if (!response.ok) {
         const providerError = await mapOpenRouterHttpError(response);
-        if (isRetriableStatus(response.status)) {
+        if (
+          isRetriableStatus(response.status) ||
+          (response.status >= 400 && response.status < 500)
+        ) {
           lastError = providerError;
           continue;
         }
@@ -256,9 +272,11 @@ async function fetchWithVisionModel(
       }
 
       if (text.length > maxAiResponseBytes) {
-        throw new Error(
+        lastError = new AiProviderError(
           "OpenRouter response exceeded the maximum allowed size.",
+          502,
         );
+        continue;
       }
 
       try {
@@ -272,7 +290,10 @@ async function fetchWithVisionModel(
       }
     } catch (err) {
       if (err instanceof AiProviderError) {
-        if (isRetriableStatus(err.status)) {
+        if (
+          isRetriableStatus(err.status) ||
+          (err.status >= 400 && err.status < 500)
+        ) {
           lastError = err;
           continue;
         }

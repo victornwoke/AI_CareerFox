@@ -1,7 +1,7 @@
 import { readAsStringAsync } from "expo-file-system/legacy";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Pressable,
     ScrollView,
@@ -16,7 +16,6 @@ import { SymbolIcon } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import { targetRoles } from "@/data/roles";
 import { trackCvAnalysisStarted } from "@/lib/analytics";
-import { extractUploadedText } from "@/lib/api";
 import { useCvAnalysisStore } from "@/store/useCvAnalysisStore";
 
 const minCvLength = 80;
@@ -113,7 +112,7 @@ async function readPickedFileText(asset: {
         text = trimmedText;
       }
     } catch {
-      // Keep the payload and let the server resolve text if needed.
+      // Keep the payload even if local text extraction fails.
     }
   }
 
@@ -126,25 +125,6 @@ async function readPickedFileText(asset: {
   };
 }
 
-async function extractUploadedDocumentText(asset: {
-  mimeType?: string | null;
-  name: string;
-  base64: string;
-}): Promise<string | null> {
-  try {
-    const extractedText = await extractUploadedText({
-      base64: asset.base64,
-      fileName: asset.name,
-      ...(asset.mimeType ? { mimeType: asset.mimeType } : {}),
-    });
-    const trimmedText = extractedText.trim();
-
-    return trimmedText.length > 0 ? trimmedText : null;
-  } catch {
-    return null;
-  }
-}
-
 export default function CvScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -153,15 +133,12 @@ export default function CvScreen() {
   const isPhone = width < 744;
   const [cvFile, setCvFile] = useState<UploadedDocument | null>(null);
   const [cvFileText, setCvFileText] = useState<string | null>(null);
-  const [cvFileUnsupported, setCvFileUnsupported] = useState(false);
   const [jobDescriptionText, setJobDescriptionText] = useState("");
   const [jobDescriptionFile, setJobDescriptionFile] =
     useState<UploadedDocument | null>(null);
   const [jobDescriptionFileText, setJobDescriptionFileText] = useState<
     string | null
   >(null);
-  const [jobDescriptionFileUnsupported, setJobDescriptionFileUnsupported] =
-    useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedCvRoleId, setSelectedCvRoleId] = useState<string | null>(null);
   const trimmedJobDescription = jobDescriptionText.trim();
@@ -180,9 +157,6 @@ export default function CvScreen() {
     () => targetRoles.find((role) => role.id === selectedCvRoleId) ?? null,
     [selectedCvRoleId],
   );
-
-  const activeCvUploadRef = useRef<string | null>(null);
-  const activeJdUploadRef = useRef<string | null>(null);
 
   const pickDocument = async (kind: UploadKind) => {
     setUploadError(null);
@@ -208,9 +182,7 @@ export default function CvScreen() {
 
       const uploadedDocument = await readPickedFileText(asset);
 
-      // Set the file immediately so the Analyse button is enabled now.
-      // Server extraction runs in the background and updates the text
-      // state when it resolves — analysis falls back to base64 if it fails.
+      // Store upload payload and any locally extracted text.
       if (kind === "cv") {
         setCvFile({
           base64: uploadedDocument.base64,
@@ -220,26 +192,6 @@ export default function CvScreen() {
           text: uploadedDocument.text,
         });
         setCvFileText(uploadedDocument.text);
-        setCvFileUnsupported(false);
-        activeCvUploadRef.current = uploadedDocument.name;
-
-        if (!uploadedDocument.text) {
-          void extractUploadedDocumentText({
-            base64: uploadedDocument.base64,
-            mimeType: uploadedDocument.mimeType,
-            name: uploadedDocument.name,
-          }).then((serverText) => {
-            if (activeCvUploadRef.current !== uploadedDocument.name) {
-              return;
-            }
-
-            if (serverText) {
-              setCvFileText(serverText);
-            } else {
-              setCvFileUnsupported(true);
-            }
-          });
-        }
 
         return;
       }
@@ -252,26 +204,6 @@ export default function CvScreen() {
         text: uploadedDocument.text,
       });
       setJobDescriptionFileText(uploadedDocument.text);
-      setJobDescriptionFileUnsupported(false);
-      activeJdUploadRef.current = uploadedDocument.name;
-
-      if (!uploadedDocument.text) {
-        void extractUploadedDocumentText({
-          base64: uploadedDocument.base64,
-          mimeType: uploadedDocument.mimeType,
-          name: uploadedDocument.name,
-        }).then((serverText) => {
-          if (activeJdUploadRef.current !== uploadedDocument.name) {
-            return;
-          }
-
-          if (serverText) {
-            setJobDescriptionFileText(serverText);
-          } else {
-            setJobDescriptionFileUnsupported(true);
-          }
-        });
-      }
     } catch {
       setUploadError(getDocumentPickerUnavailableMessage());
     }
@@ -510,7 +442,6 @@ export default function CvScreen() {
                   onPress={() => {
                     setCvFile(null);
                     setCvFileText(null);
-                    setCvFileUnsupported(false);
                   }}
                 >
                   <Text className="text-[12px] font-bold leading-[16px] text-primary">
@@ -594,7 +525,6 @@ export default function CvScreen() {
                   onPress={() => {
                     setJobDescriptionFile(null);
                     setJobDescriptionFileText(null);
-                    setJobDescriptionFileUnsupported(false);
                   }}
                 >
                   <Text className="text-[12px] font-bold leading-[16px] text-blue">

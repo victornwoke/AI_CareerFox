@@ -428,6 +428,8 @@ export default function ProgressScreen() {
   const isNarrow = width < 370;
   const horizontalPadding = isNarrow ? 20 : 24;
   const chartInnerWidth = Math.max(1, width - horizontalPadding * 2 - 32);
+  const headerPaddingTop = Math.max(insets.top - 8, 24);
+  const maxAllTimeChartDays = 180;
 
   const dayCount = useMemo(() => {
     switch (selectedPeriod) {
@@ -451,13 +453,13 @@ export default function ProgressScreen() {
           (Date.now() - earliestPracticeTime) / (1000 * 60 * 60 * 24),
         );
 
-        return daysSinceFirstPractice + 1;
+        return Math.min(daysSinceFirstPractice + 1, maxAllTimeChartDays);
       }
 
       default:
         return 7;
     }
-  }, [selectedPeriod, practiceHistory]);
+  }, [selectedPeriod, practiceHistory, maxAllTimeChartDays]);
 
   const getDayCount = () => dayCount;
   const questionBars = useMemo(
@@ -495,7 +497,7 @@ export default function ProgressScreen() {
         start={{ x: 0, y: 0 }}
         style={{
           paddingHorizontal: horizontalPadding,
-          paddingTop: Math.max(insets.top - 8, 24),
+          paddingTop: headerPaddingTop,
           paddingBottom: 14,
         }}
       >
@@ -509,6 +511,14 @@ export default function ProgressScreen() {
             My Progress
           </Text>
           <Pressable
+            accessibilityLabel={`Select progress period. Current: ${
+              selectedPeriod === "week"
+                ? "This Week"
+                : selectedPeriod === "month"
+                  ? "This Month"
+                  : "All Time"
+            }`}
+            accessibilityRole="button"
             onPress={() => setIsDropdownOpen(true)}
             className="ml-4 h-[54px] flex-row items-center justify-center rounded-full bg-white/18 px-6"
           >
@@ -543,7 +553,7 @@ export default function ProgressScreen() {
           <View
             className="absolute top-0 right-0 left-0 flex-row justify-end px-6"
             pointerEvents="box-none"
-            style={{ paddingTop: Math.max(insets.top - 20, 18) + 54 + 14 + 8 }}
+            style={{ paddingTop: headerPaddingTop + 54 + 14 + 8 }}
           >
             <View className="w-40 overflow-hidden rounded-3xl bg-white shadow-lg">
               {[
@@ -552,6 +562,13 @@ export default function ProgressScreen() {
                 { label: "All Time", value: "all" as const },
               ].map((option, index) => (
                 <Pressable
+                  accessibilityLabel={`${option.label}${
+                    selectedPeriod === option.value ? ", selected" : ""
+                  }`}
+                  accessibilityRole="button"
+                  accessibilityState={{
+                    selected: selectedPeriod === option.value,
+                  }}
                   key={option.value}
                   onPress={() => {
                     setSelectedPeriod(option.value);
