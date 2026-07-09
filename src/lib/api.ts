@@ -147,6 +147,7 @@ export type CvFeedbackRequest = {
   };
   experienceLevel?: string;
   jobDescription?: string;
+  cloudProvider?: string;
   jobDescriptionFile?: {
     base64: string;
     mimeType?: string;
@@ -165,6 +166,7 @@ export type ExtractUploadedTextRequest = {
 export type InterviewFeedbackRequest = {
   answer: string;
   category: "behavioral" | "technical" | "case" | "hr";
+  cloudProvider?: string;
   experienceLevel: string;
   jobDescription?: string;
   question: string;

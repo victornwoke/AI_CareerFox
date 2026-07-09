@@ -304,6 +304,41 @@ export default function ProfileScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <LinearGradient
+        colors={gradients.primary}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={{
+          paddingHorizontal: isNarrow ? 20 : 24,
+          paddingTop: Math.max(insets.top - 20, 18),
+          paddingBottom: 12,
+        }}
+      >
+        <View className="flex-row items-center justify-between">
+          <Pressable
+            accessibilityLabel="Back to home"
+            accessibilityRole="button"
+            className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
+            hitSlop={10}
+            onPress={() => router.push(homeHref)}
+          >
+            <SymbolIcon color={colors.white} name="chevron.left" size={22} />
+          </Pressable>
+
+          <Pressable
+            accessibilityLabel="Sign out"
+            accessibilityRole="button"
+            className="min-h-10 flex-row items-center gap-2 rounded-full bg-white/16 px-3"
+            onPress={() => router.push(signOutHref)}
+          >
+            <Text className="text-[12px] font-bold leading-[16px] text-white">
+              Sign out
+            </Text>
+            <SymbolIcon color={colors.white} name="arrow.right" size={15} />
+          </Pressable>
+        </View>
+      </LinearGradient>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F7F4FF]"
@@ -320,33 +355,9 @@ export default function ProfileScreen() {
             borderBottomRightRadius: 48,
             paddingBottom: 32,
             paddingHorizontal: isNarrow ? 20 : 24,
-            paddingTop: Math.max(insets.top - 20, 18),
+            paddingTop: 8,
           }}
         >
-          <View className="flex-row items-center justify-between">
-            <Pressable
-              accessibilityLabel="Back to home"
-              accessibilityRole="button"
-              className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
-              hitSlop={10}
-              onPress={() => router.push(homeHref)}
-            >
-              <SymbolIcon color={colors.white} name="chevron.left" size={22} />
-            </Pressable>
-
-            <Pressable
-              accessibilityLabel="Sign out"
-              accessibilityRole="button"
-              className="min-h-10 flex-row items-center gap-2 rounded-full bg-white/16 px-3"
-              onPress={() => router.push(signOutHref)}
-            >
-              <Text className="text-[12px] font-bold leading-[16px] text-white">
-                Sign out
-              </Text>
-              <SymbolIcon color={colors.white} name="arrow.right" size={15} />
-            </Pressable>
-          </View>
-
           <View className="mt-7 flex-row items-center gap-4">
             <View className="h-[76px] w-[76px] items-center justify-center rounded-full bg-white/18">
               {user?.imageUrl ? (

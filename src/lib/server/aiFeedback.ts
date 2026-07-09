@@ -31,6 +31,7 @@ type PracticeQuestionStructure = "STAR" | "XYZ" | "freeform";
 
 export type InterviewFeedbackInput = {
   answer: string;
+  cloudProvider?: string;
   experienceLevel: string;
   jobDescription?: string;
   practiceMode?: AiPracticeMode;
@@ -60,6 +61,7 @@ export type InterviewFeedbackOutput = {
 export type CvFeedbackInput = {
   cvFile?: UploadedFileInput;
   cvText?: string;
+  cloudProvider?: string;
   experienceLevel?: string;
   jobDescriptionFile?: UploadedFileInput;
   jobDescription?: string;
@@ -231,6 +233,7 @@ const maxLessonTitleLength = 160;
 const maxPreviousQuestionLength = 300;
 const maxPreviousQuestions = 8;
 const maxSelectedCareerPathLength = 120;
+const maxCloudProviderLength = 40;
 
 const interviewCategories: readonly InterviewCategory[] = [
   "behavioral",
@@ -719,6 +722,11 @@ export function validateInterviewFeedbackInput(
   const question = getRequiredString(record, "question", maxQuestionLength);
   const answer = getRequiredString(record, "answer", maxAnswerLength);
   const category = getCategory(record.category);
+  const cloudProvider = getOptionalString(
+    record,
+    "cloudProvider",
+    maxCloudProviderLength,
+  );
   const selectedCareerPath = getOptionalString(
     record,
     "selectedCareerPath",
@@ -737,6 +745,7 @@ export function validateInterviewFeedbackInput(
   if (!question.ok) return question;
   if (!answer.ok) return answer;
   if (!category.ok) return category;
+  if (!cloudProvider.ok) return cloudProvider;
   if (!selectedCareerPath.ok) return selectedCareerPath;
   if (!jobDescription.ok) return jobDescription;
   if (!practiceMode.ok) return practiceMode;
@@ -745,6 +754,7 @@ export function validateInterviewFeedbackInput(
     data: {
       answer: answer.data,
       category: category.data,
+      cloudProvider: cloudProvider.data,
       experienceLevel: experienceLevel.data,
       jobDescription: jobDescription.data,
       practiceMode: practiceMode.data,
@@ -779,6 +789,11 @@ export function validateCvFeedbackInput(
   );
   const cvText = getOptionalTrimmedString(record, "cvText", maxCvTextLength);
   const cvFile = validateUploadedFile(record.cvFile, "cvFile");
+  const cloudProvider = getOptionalString(
+    record,
+    "cloudProvider",
+    maxCloudProviderLength,
+  );
   const selectedCareerPath = getOptionalString(
     record,
     "selectedCareerPath",
@@ -800,6 +815,7 @@ export function validateCvFeedbackInput(
   if (!experienceLevel.ok) return experienceLevel;
   if (!cvText.ok) return cvText;
   if (!cvFile.ok) return cvFile;
+  if (!cloudProvider.ok) return cloudProvider;
   if (!selectedCareerPath.ok) return selectedCareerPath;
   if (!jobDescription.ok) return jobDescription;
   if (!jobDescriptionFile.ok) return jobDescriptionFile;
@@ -811,6 +827,7 @@ export function validateCvFeedbackInput(
 
   return {
     data: {
+      cloudProvider: cloudProvider.data,
       cvFile: cvFile.data,
       cvText: cvText.data,
       experienceLevel: experienceLevel.data,

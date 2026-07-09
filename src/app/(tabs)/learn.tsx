@@ -154,10 +154,21 @@ export default function LearnScreen() {
   const latestJobDescription = useCvAnalysisStore(
     (state) => state.request?.jobDescription,
   );
+  const isCompact = width < 390;
   const isNarrow = width < 370;
-  const horizontalPadding = isNarrow ? 20 : 24;
-  const cardGap = 12;
-  const cardWidth = (width - horizontalPadding * 2 - cardGap) / 2;
+  const horizontalPadding = isNarrow ? 18 : isCompact ? 20 : 24;
+  const cardGap = isNarrow ? 10 : 12;
+  const cardWidth = Math.floor((width - horizontalPadding * 2 - cardGap) / 2);
+  const cardPaddingX = isNarrow ? 12 : 16;
+  const cardPaddingY = isNarrow ? 18 : 20;
+  const cardMinHeight = isNarrow ? 186 : isCompact ? 194 : 204;
+  const cardIconSize = isNarrow ? 52 : 56;
+  const cardIconSymbolSize = isNarrow ? 26 : 28;
+  const cardTitleSize = isNarrow ? 19 : isCompact ? 21 : 22;
+  const cardTitleLeading = isNarrow ? 23 : isCompact ? 25 : 26;
+  const cardDescriptionSize = isNarrow ? 11 : 12;
+  const cardCountSize = isNarrow ? 13 : 15;
+  const cardProgressSize = isNarrow ? 12 : 14;
   const selectedRole = targetRoles.find(
     (role) => role.id === selectedTargetRoleId,
   );
@@ -468,6 +479,19 @@ export default function LearnScreen() {
 
   return (
     <View className="flex-1 bg-[#10B77F]">
+      <View
+        className="bg-[#10B77F]"
+        style={{
+          paddingHorizontal: horizontalPadding,
+          paddingTop: Math.max(insets.top - 20, 18),
+          paddingBottom: 16,
+        }}
+      >
+        <Text className="text-[26px] font-bold leading-[32px] text-white">
+          Learning Categories
+        </Text>
+      </View>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F6F2FF]"
@@ -485,12 +509,9 @@ export default function LearnScreen() {
             borderBottomRightRadius: 34,
             paddingBottom: 34,
             paddingHorizontal: horizontalPadding,
-            paddingTop: Math.max(insets.top + 12, 32),
+            paddingTop: 2,
           }}
         >
-          <Text className="text-[26px] font-bold leading-[32px] text-white">
-            Learning Categories
-          </Text>
           <Text className="mt-1.5 text-[15px] font-semibold leading-[21px] text-white/72">
             {headerSummary}
           </Text>
@@ -603,26 +624,32 @@ export default function LearnScreen() {
             <Pressable
               accessibilityLabel={`Open ${category.title}`}
               accessibilityRole="button"
-              className="rounded-[28px] bg-white px-4 py-5"
+              className="rounded-[28px] bg-white"
               key={category.id}
               onPress={() => router.push(getCategoryHref(category))}
               style={{
                 borderCurve: "continuous",
                 boxShadow: "0 12px 28px rgba(13, 19, 43, 0.06)",
-                minHeight: 204,
+                minHeight: cardMinHeight,
+                paddingHorizontal: cardPaddingX,
+                paddingVertical: cardPaddingY,
                 width: cardWidth,
               }}
             >
               <View className="flex-row items-start justify-between gap-2">
                 <View
-                  className="h-[56px] w-[56px] items-center justify-center rounded-[22px]"
-                  style={{ backgroundColor: category.iconBackground }}
+                  className="items-center justify-center rounded-[22px]"
+                  style={{
+                    backgroundColor: category.iconBackground,
+                    height: cardIconSize,
+                    width: cardIconSize,
+                  }}
                 >
                   <SymbolIcon
                     accessibilityLabel={category.title}
                     color={category.iconColor}
                     name={category.icon}
-                    size={28}
+                    size={cardIconSymbolSize}
                   />
                 </View>
                 <View className="h-7 w-7 items-center justify-center rounded-full bg-[#F5F1FF]">
@@ -637,19 +664,33 @@ export default function LearnScreen() {
 
               <Text
                 adjustsFontSizeToFit
-                className="mt-6 text-[22px] font-bold leading-[26px] text-text-primary"
-                minimumFontScale={0.78}
+                className="mt-5 font-bold text-text-primary"
+                minimumFontScale={0.8}
                 numberOfLines={2}
+                style={{
+                  fontSize: cardTitleSize,
+                  lineHeight: cardTitleLeading,
+                }}
               >
                 {category.title}
               </Text>
               <Text
-                className="mt-2 text-[12px] font-semibold leading-[16px] text-[#8F92A8]"
-                numberOfLines={3}
+                className="mt-2 font-semibold text-[#8F92A8]"
+                numberOfLines={isNarrow ? 2 : 3}
+                style={{
+                  fontSize: cardDescriptionSize,
+                  lineHeight: isNarrow ? 15 : 16,
+                }}
               >
                 {category.description}
               </Text>
-              <Text className="mt-3 text-[15px] font-bold leading-[20px] text-[#8F92A8]">
+              <Text
+                className="mt-3 font-bold text-[#8F92A8]"
+                style={{
+                  fontSize: cardCountSize,
+                  lineHeight: isNarrow ? 18 : 20,
+                }}
+              >
                 {category.countLabel}
               </Text>
 
@@ -660,16 +701,24 @@ export default function LearnScreen() {
                     progress={category.progressStatus.progress}
                   />
                   <Text
-                    className="text-[14px] font-bold leading-[18px]"
-                    style={{ color: category.iconColor }}
+                    className="font-bold"
+                    style={{
+                      color: category.iconColor,
+                      fontSize: cardProgressSize,
+                      lineHeight: isNarrow ? 16 : 18,
+                    }}
                   >
                     {category.progressDetail}
                   </Text>
                 </View>
               ) : (
                 <Text
-                  className="mt-3 text-[13px] font-bold leading-[17px]"
-                  style={{ color: category.iconColor }}
+                  className="mt-3 font-bold"
+                  style={{
+                    color: category.iconColor,
+                    fontSize: cardProgressSize,
+                    lineHeight: isNarrow ? 16 : 17,
+                  }}
                 >
                   {category.progressDetail}
                 </Text>

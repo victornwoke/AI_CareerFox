@@ -225,6 +225,41 @@ export default function ApplicationsScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <LinearGradient
+        colors={gradients.primary}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={{
+          paddingHorizontal: horizontalPadding,
+          paddingTop: Math.max(insets.top - 20, 18),
+          paddingBottom: 14,
+        }}
+      >
+        <View className="flex-row items-center justify-between gap-4">
+          <View className="flex-1">
+            <Text className="text-[31px] font-bold leading-[38px] text-white">
+              Applications
+            </Text>
+            <Text className="mt-2 text-[14px] font-semibold leading-[20px] text-white/72">
+              Track job applications and follow-up momentum.
+            </Text>
+          </View>
+          <Pressable
+            accessibilityLabel="Add application"
+            accessibilityRole="button"
+            className="h-[54px] w-[54px] items-center justify-center rounded-full bg-white/18"
+            onPress={() => router.push(newApplicationHref)}
+          >
+            <SymbolIcon
+              accessibilityLabel="Add application"
+              color={colors.white}
+              name="plus"
+              size={27}
+            />
+          </Pressable>
+        </View>
+      </LinearGradient>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F7F4FF]"
@@ -241,33 +276,9 @@ export default function ApplicationsScreen() {
             borderBottomRightRadius: 48,
             paddingBottom: 34,
             paddingHorizontal: horizontalPadding,
-            paddingTop: Math.max(insets.top + 12, 32),
+            paddingTop: 8,
           }}
         >
-          <View className="flex-row items-center justify-between gap-4">
-            <View className="flex-1">
-              <Text className="text-[31px] font-bold leading-[38px] text-white">
-                Applications
-              </Text>
-              <Text className="mt-2 text-[14px] font-semibold leading-[20px] text-white/72">
-                Track job applications and follow-up momentum.
-              </Text>
-            </View>
-            <Pressable
-              accessibilityLabel="Add application"
-              accessibilityRole="button"
-              className="h-[54px] w-[54px] items-center justify-center rounded-full bg-white/18"
-              onPress={() => router.push(newApplicationHref)}
-            >
-              <SymbolIcon
-                accessibilityLabel="Add application"
-                color={colors.white}
-                name="plus"
-                size={27}
-              />
-            </Pressable>
-          </View>
-
           <View className="mt-7 flex-row gap-3">
             <SummaryCard
               accent={colors.blue}
