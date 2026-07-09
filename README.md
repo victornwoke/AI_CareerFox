@@ -466,7 +466,15 @@ xcodebuild -workspace AICareerFox.xcworkspace \
   -configuration Release \
   -archivePath build/AICareerFox.xcarchive \
   archive
+
+# Export IPA from the archive
+xcodebuild -exportArchive \
+  -archivePath build/AICareerFox.xcarchive \
+  -exportPath build/export \
+  -exportOptionsPlist ExportOptions.plist
 cd ..
+
+# Resulting IPA: ios/build/export/AICareerFox.ipa
 ```
 
 #### Step 3: Upload to App Store Connect
@@ -482,7 +490,7 @@ cd ..
 # 5. Follow prompts
 
 # Option B: Using Transporter
-xcrun altool --upload-app -f build/AICareerFox.ipa \
+xcrun altool --upload-app -f ios/build/export/AICareerFox.ipa \
   -t ios \
   -u your-apple-id@example.com \
   -p app-specific-password
@@ -637,32 +645,33 @@ Monitor key metrics:
 
 ## API Integration
 
-### Gemini API
+### Gemini Provider
 
 **Used for:**
 
 - Interview feedback and readiness scoring
-- CV analysis and improvement suggestions
+- Lesson, practice, and general structured AI flows
 - Question generation and explanations
 
 **Error Handling:**
 
 - Rate limit (429): Automatically fallbacks to OpenRouter
-- Quota exceeded: Uses cached responses
-- Network error (503, 504): Retries with exponential backoff
+- Temporary unavailability and provider misconfiguration mapped to 503: falls back to OpenRouter when available
+- Timeout (504): surfaced as provider timeout
 
 **Integration Points:**
 
 - `src/lib/ai/geminiProvider.ts` - Gemini client setup
-- `src/lib/server/aiFeedback.ts` - Feedback generation
+- `src/lib/ai/aiProvider.ts` - Primary provider selection for non-CV flows
+- `src/lib/server/aiFeedback.ts` - General feedback generation
 
-### OpenRouter API
+### OpenRouter Provider
 
 **Used for:**
 
-- Fallback AI provider (when Gemini rate-limited)
-- CV text extraction with vision models
-- Alternative interview feedback
+- CV analysis and improvement suggestions
+- Fallback AI provider for non-CV flows when Gemini is unavailable or rate-limited
+- Multimodal requests that include uploaded files
 
 **Supported Models:**
 
@@ -672,7 +681,8 @@ Monitor key metrics:
 **Integration Points:**
 
 - `src/lib/ai/openrouterProvider.ts` - OpenRouter client setup
-- `src/lib/ai/aiProvider.ts` - Routing logic between providers
+- `src/lib/ai/aiProvider.ts` - CV routing and Gemini fallback routing
+- `src/lib/server/aiFeedback.ts` - CV feedback generation via `getCvAiProvider()`
 
 ### Clerk API
 

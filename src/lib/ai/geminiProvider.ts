@@ -173,7 +173,7 @@ async function readGeminiErrorMessage(response: Response): Promise<string> {
 
 function mapGeminiHttpError(
   status: number,
-  upstreamMessage: string,
+  _upstreamMessage: string,
 ): AiProviderError {
   if (status === 401 || status === 403) {
     return new AiProviderError(

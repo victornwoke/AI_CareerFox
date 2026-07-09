@@ -214,6 +214,9 @@ export default function CvScreen() {
       return;
     }
 
+    const cvTextForRequest =
+      effectiveCvText.length >= minCvLength ? effectiveCvText : undefined;
+
     trackCvAnalysisStarted({
       cvInputType: cvFile ? "file" : "text",
       cvTextLength: effectiveCvText.length,
@@ -230,7 +233,7 @@ export default function CvScreen() {
             name: cvFile.name,
           }
         : undefined,
-      cvText: effectiveCvText || undefined,
+      cvText: cvTextForRequest,
       jobDescription: effectiveJobDescription || undefined,
       jobDescriptionFile: jobDescriptionFile
         ? {
