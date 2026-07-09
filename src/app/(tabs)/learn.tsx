@@ -468,6 +468,19 @@ export default function LearnScreen() {
 
   return (
     <View className="flex-1 bg-[#10B77F]">
+      <View
+        className="bg-[#10B77F]"
+        style={{
+          paddingHorizontal: horizontalPadding,
+          paddingTop: Math.max(insets.top + 12, 32),
+          paddingBottom: 16,
+        }}
+      >
+        <Text className="text-[26px] font-bold leading-[32px] text-white">
+          Learning Categories
+        </Text>
+      </View>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F6F2FF]"
@@ -485,12 +498,9 @@ export default function LearnScreen() {
             borderBottomRightRadius: 34,
             paddingBottom: 34,
             paddingHorizontal: horizontalPadding,
-            paddingTop: Math.max(insets.top + 12, 32),
+            paddingTop: 2,
           }}
         >
-          <Text className="text-[26px] font-bold leading-[32px] text-white">
-            Learning Categories
-          </Text>
           <Text className="mt-1.5 text-[15px] font-semibold leading-[21px] text-white/72">
             {headerSummary}
           </Text>

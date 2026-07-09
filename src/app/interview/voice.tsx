@@ -735,22 +735,16 @@ export default function VoicePracticeScreen() {
 
   const screenContent = (
     <View className="flex-1 bg-[#201D50]">
-      <ScrollView
-        automaticallyAdjustContentInsets={false}
-        className="flex-1"
-        contentContainerStyle={{
+      <View
+        className="bg-[#201D50]"
+        style={{
           alignSelf: "center",
-          backgroundColor: darkBackground,
           maxWidth: contentMaxWidth,
-          minHeight: height,
-          paddingBottom: Math.max(insets.bottom + 16, 28),
           paddingHorizontal: 18,
           paddingTop: Math.max(insets.top - 8, 20),
+          paddingBottom: 12,
           width: "100%",
         }}
-        contentInsetAdjustmentBehavior="never"
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
       >
         <View className="h-[48px] flex-row items-center gap-3">
           <Pressable
@@ -787,7 +781,25 @@ export default function VoicePracticeScreen() {
             </Text>
           </View>
         </View>
+      </View>
 
+      <ScrollView
+        automaticallyAdjustContentInsets={false}
+        className="flex-1"
+        contentContainerStyle={{
+          alignSelf: "center",
+          backgroundColor: darkBackground,
+          maxWidth: contentMaxWidth,
+          minHeight: height,
+          paddingBottom: Math.max(insets.bottom + 16, 28),
+          paddingHorizontal: 18,
+          paddingTop: 8,
+          width: "100%",
+        }}
+        contentInsetAdjustmentBehavior="never"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View
           className="mt-4 rounded-[24px] bg-white/10 p-4"
           style={{ borderCurve: "continuous" }}

@@ -136,16 +136,9 @@ export default function BehavioralInterviewScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <ScrollView
-        automaticallyAdjustContentInsets={false}
-        className="flex-1 bg-[#F6F2FF]"
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + 24,
-          paddingHorizontal: 24,
-          paddingTop: Math.max(insets.top + 12, 32),
-        }}
-        contentInsetAdjustmentBehavior="never"
-        showsVerticalScrollIndicator={false}
+      <View
+        className="bg-[#F6F2FF] px-6"
+        style={{ paddingTop: Math.max(insets.top + 12, 32), paddingBottom: 12 }}
       >
         <View className="flex-row items-center gap-4">
           <Pressable
@@ -172,7 +165,19 @@ export default function BehavioralInterviewScreen() {
             </Text>
           </View>
         </View>
+      </View>
 
+      <ScrollView
+        automaticallyAdjustContentInsets={false}
+        className="flex-1 bg-[#F6F2FF]"
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 24,
+          paddingHorizontal: 24,
+          paddingTop: 8,
+        }}
+        contentInsetAdjustmentBehavior="never"
+        showsVerticalScrollIndicator={false}
+      >
         <View className="mt-6 h-3 flex-row gap-2">
           {lessons.slice(0, 3).map((lesson, index) => {
             const isFilled =

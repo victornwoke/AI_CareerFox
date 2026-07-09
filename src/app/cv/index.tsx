@@ -314,6 +314,49 @@ export default function CvScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <LinearGradient
+        colors={gradients.primary}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={{
+          paddingHorizontal: isNarrow ? 20 : 24,
+          paddingTop: Math.max(insets.top - 20, 18),
+          paddingBottom: 14,
+        }}
+      >
+        <View className="flex-row items-center justify-between">
+          <Pressable
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+            className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
+            hitSlop={10}
+            onPress={() => router.back()}
+          >
+            <SymbolIcon color={colors.white} name="chevron.left" size={22} />
+          </Pressable>
+
+          <View className="flex-row items-center gap-2 rounded-full bg-white/16 px-3 py-2">
+            <SymbolIcon color={colors.white} name="sparkles" size={16} />
+            <Text className="text-[12px] font-bold leading-[16px] text-white">
+              Private review
+            </Text>
+          </View>
+        </View>
+
+        <View className="mt-8">
+          <View className="h-14 w-14 items-center justify-center rounded-[22px] bg-white/18">
+            <SymbolIcon color={colors.white} name="doc.text.fill" size={30} />
+          </View>
+          <Text className="mt-5 text-[30px] font-bold leading-[36px] text-white">
+            CV Coach
+          </Text>
+          <Text className="mt-2 max-w-[310px] text-[16px] font-semibold leading-[24px] text-white/76">
+            Paste or upload your CV, then add a job description for sharper
+            feedback.
+          </Text>
+        </View>
+      </LinearGradient>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F7F4FF]"
@@ -331,41 +374,9 @@ export default function CvScreen() {
             borderBottomRightRadius: 46,
             paddingBottom: 34,
             paddingHorizontal: isNarrow ? 20 : 24,
-            paddingTop: Math.max(insets.top - 20, 18),
+            paddingTop: 8,
           }}
         >
-          <View className="flex-row items-center justify-between">
-            <Pressable
-              accessibilityLabel="Go back"
-              accessibilityRole="button"
-              className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
-              hitSlop={10}
-              onPress={() => router.back()}
-            >
-              <SymbolIcon color={colors.white} name="chevron.left" size={22} />
-            </Pressable>
-
-            <View className="flex-row items-center gap-2 rounded-full bg-white/16 px-3 py-2">
-              <SymbolIcon color={colors.white} name="sparkles" size={16} />
-              <Text className="text-[12px] font-bold leading-[16px] text-white">
-                Private review
-              </Text>
-            </View>
-          </View>
-
-          <View className="mt-8">
-            <View className="h-14 w-14 items-center justify-center rounded-[22px] bg-white/18">
-              <SymbolIcon color={colors.white} name="doc.text.fill" size={30} />
-            </View>
-            <Text className="mt-5 text-[30px] font-bold leading-[36px] text-white">
-              CV Coach
-            </Text>
-            <Text className="mt-2 max-w-[310px] text-[16px] font-semibold leading-[24px] text-white/76">
-              Paste or upload your CV, then add a job description for sharper
-              feedback.
-            </Text>
-          </View>
-
           <View className="mt-6 flex-row gap-3">
             <View className="min-h-[86px] flex-1 rounded-[22px] bg-white/15 px-4 py-4">
               <Text className="text-[23px] font-bold leading-[28px] text-white">

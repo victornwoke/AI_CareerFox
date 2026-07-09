@@ -338,6 +338,61 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <LinearGradient
+        colors={gradients.primary}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={{
+          paddingHorizontal: isNarrow ? 20 : 24,
+          paddingTop: Math.max(insets.top + 12, 32),
+          paddingBottom: 12,
+        }}
+      >
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row flex-1 items-center gap-3">
+            <Pressable
+              accessibilityLabel="Open profile"
+              accessibilityRole="button"
+              className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
+              hitSlop={10}
+              onPress={() => router.push(profileHref)}
+            >
+              <Image
+                accessibilityLabel="CareerFox mascot"
+                contentFit="contain"
+                source={images.careerFoxLogoMark}
+                style={{ height: 25, width: 25 }}
+              />
+            </Pressable>
+            <View className="flex-1">
+              <Text className="text-[13px] font-semibold leading-[17px] text-white/72">
+                Good morning,
+              </Text>
+              <Text
+                adjustsFontSizeToFit
+                className="text-[17px] font-bold leading-[22px] text-white"
+                minimumFontScale={0.72}
+                numberOfLines={1}
+              >
+                {userName}
+              </Text>
+            </View>
+          </View>
+
+          <View className="flex-row items-center gap-1 rounded-full bg-white/16 px-2.5 py-1.5">
+            <SymbolIcon
+              accessibilityLabel="Streak"
+              color="#FFB84A"
+              name="flame.fill"
+              size={14}
+            />
+            <Text className="text-[12px] font-bold leading-[15px] text-white">
+              {streak}d
+            </Text>
+          </View>
+        </View>
+      </LinearGradient>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F7F4FF]"
@@ -356,53 +411,9 @@ export default function HomeScreen() {
             borderBottomRightRadius: 48,
             paddingBottom: 32,
             paddingHorizontal: isNarrow ? 20 : 24,
-            paddingTop: Math.max(insets.top + 12, 32),
+            paddingTop: 8,
           }}
         >
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row flex-1 items-center gap-3">
-              <Pressable
-                accessibilityLabel="Open profile"
-                accessibilityRole="button"
-                className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
-                hitSlop={10}
-                onPress={() => router.push(profileHref)}
-              >
-                <Image
-                  accessibilityLabel="CareerFox mascot"
-                  contentFit="contain"
-                  source={images.careerFoxLogoMark}
-                  style={{ height: 25, width: 25 }}
-                />
-              </Pressable>
-              <View className="flex-1">
-                <Text className="text-[13px] font-semibold leading-[17px] text-white/72">
-                  Good morning,
-                </Text>
-                <Text
-                  adjustsFontSizeToFit
-                  className="text-[17px] font-bold leading-[22px] text-white"
-                  minimumFontScale={0.72}
-                  numberOfLines={1}
-                >
-                  {userName}
-                </Text>
-              </View>
-            </View>
-
-            <View className="flex-row items-center gap-1 rounded-full bg-white/16 px-2.5 py-1.5">
-              <SymbolIcon
-                accessibilityLabel="Streak"
-                color="#FFB84A"
-                name="flame.fill"
-                size={14}
-              />
-              <Text className="text-[12px] font-bold leading-[15px] text-white">
-                {streak}d
-              </Text>
-            </View>
-          </View>
-
           <View className="mt-5 flex-row gap-3">
             <StatCard
               detail={`${completedCount}/${totalMissions} done`}

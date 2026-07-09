@@ -299,6 +299,40 @@ export default function CvResultsScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <LinearGradient
+        colors={gradients.primary}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={{
+          paddingHorizontal: isNarrow ? 20 : 24,
+          paddingTop: Math.max(insets.top - 20, 18),
+          paddingBottom: 14,
+        }}
+      >
+        <View className="flex-row items-center justify-between">
+          <Pressable
+            accessibilityLabel="Go back to CV Coach"
+            accessibilityRole="button"
+            className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
+            hitSlop={10}
+            onPress={() => router.back()}
+          >
+            <SymbolIcon color={colors.white} name="chevron.left" size={22} />
+          </Pressable>
+
+          <View className="flex-row items-center gap-2 rounded-full bg-white/16 px-3 py-2">
+            <SymbolIcon color={colors.white} name="doc.text.fill" size={15} />
+            <Text className="text-[12px] font-bold leading-[16px] text-white">
+              {isLoading
+                ? "Analysing"
+                : displayStatus === "error"
+                  ? "Analysis"
+                  : "AI review"}
+            </Text>
+          </View>
+        </View>
+      </LinearGradient>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F7F4FF]"
@@ -315,32 +349,9 @@ export default function CvResultsScreen() {
             borderBottomRightRadius: 46,
             paddingBottom: 34,
             paddingHorizontal: isNarrow ? 20 : 24,
-            paddingTop: Math.max(insets.top - 20, 18),
+            paddingTop: 8,
           }}
         >
-          <View className="flex-row items-center justify-between">
-            <Pressable
-              accessibilityLabel="Go back to CV Coach"
-              accessibilityRole="button"
-              className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
-              hitSlop={10}
-              onPress={() => router.back()}
-            >
-              <SymbolIcon color={colors.white} name="chevron.left" size={22} />
-            </Pressable>
-
-            <View className="flex-row items-center gap-2 rounded-full bg-white/16 px-3 py-2">
-              <SymbolIcon color={colors.white} name="doc.text.fill" size={15} />
-              <Text className="text-[12px] font-bold leading-[16px] text-white">
-                {isLoading
-                  ? "Analysing"
-                  : displayStatus === "error"
-                    ? "Analysis"
-                    : "AI review"}
-              </Text>
-            </View>
-          </View>
-
           <View className="mt-7 flex-row items-end justify-between gap-4">
             <View className="flex-1">
               <Text className="text-[15px] font-bold leading-[20px] text-white/76">

@@ -128,6 +128,38 @@ export default function NewApplicationScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <LinearGradient
+        colors={gradients.primary}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={{
+          paddingHorizontal: 24,
+          paddingTop: Math.max(insets.top + 12, 32),
+          paddingBottom: 14,
+        }}
+      >
+        <Pressable
+          accessibilityLabel="Back to applications"
+          accessibilityRole="button"
+          className="h-11 w-11 items-center justify-center rounded-full bg-white/18"
+          onPress={() => router.back()}
+        >
+          <SymbolIcon
+            accessibilityLabel="Back"
+            color={colors.white}
+            name="chevron.left"
+            size={24}
+          />
+        </Pressable>
+
+        <Text className="mt-6 text-[30px] font-bold leading-[37px] text-white">
+          Add application
+        </Text>
+        <Text className="mt-2 text-[14px] font-semibold leading-[21px] text-white/72">
+          Save the role, status, and next follow-up action.
+        </Text>
+      </LinearGradient>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F7F4FF]"
@@ -145,32 +177,11 @@ export default function NewApplicationScreen() {
           style={{
             borderBottomLeftRadius: 40,
             borderBottomRightRadius: 40,
-            paddingBottom: 32,
+            paddingBottom: 8,
             paddingHorizontal: 24,
-            paddingTop: Math.max(insets.top + 12, 32),
+            paddingTop: 0,
           }}
-        >
-          <Pressable
-            accessibilityLabel="Back to applications"
-            accessibilityRole="button"
-            className="h-11 w-11 items-center justify-center rounded-full bg-white/18"
-            onPress={() => router.back()}
-          >
-            <SymbolIcon
-              accessibilityLabel="Back"
-              color={colors.white}
-              name="chevron.left"
-              size={24}
-            />
-          </Pressable>
-
-          <Text className="mt-6 text-[30px] font-bold leading-[37px] text-white">
-            Add application
-          </Text>
-          <Text className="mt-2 text-[14px] font-semibold leading-[21px] text-white/72">
-            Save the role, status, and next follow-up action.
-          </Text>
-        </LinearGradient>
+        ></LinearGradient>
 
         <View className="-mt-4 px-6">
           <View

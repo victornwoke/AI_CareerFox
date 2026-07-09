@@ -162,6 +162,41 @@ export default function ApplicationDetailScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <LinearGradient
+        colors={gradients.primary}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={{
+          paddingHorizontal: 24,
+          paddingTop: Math.max(insets.top + 12, 32),
+          paddingBottom: 14,
+        }}
+      >
+        <Pressable
+          accessibilityLabel="Back to applications"
+          accessibilityRole="button"
+          className="h-11 w-11 items-center justify-center rounded-full bg-white/18"
+          onPress={() => router.back()}
+        >
+          <SymbolIcon
+            accessibilityLabel="Back"
+            color={colors.white}
+            name="chevron.left"
+            size={24}
+          />
+        </Pressable>
+
+        <Text
+          className="mt-6 text-[30px] font-bold leading-[37px] text-white"
+          numberOfLines={2}
+        >
+          {application.companyName}
+        </Text>
+        <Text className="mt-2 text-[15px] font-semibold leading-[22px] text-white/76">
+          {application.roleTitle}
+        </Text>
+      </LinearGradient>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F7F4FF]"
@@ -177,35 +212,11 @@ export default function ApplicationDetailScreen() {
           style={{
             borderBottomLeftRadius: 40,
             borderBottomRightRadius: 40,
-            paddingBottom: 32,
+            paddingBottom: 8,
             paddingHorizontal: 24,
-            paddingTop: Math.max(insets.top + 12, 32),
+            paddingTop: 0,
           }}
-        >
-          <Pressable
-            accessibilityLabel="Back to applications"
-            accessibilityRole="button"
-            className="h-11 w-11 items-center justify-center rounded-full bg-white/18"
-            onPress={() => router.back()}
-          >
-            <SymbolIcon
-              accessibilityLabel="Back"
-              color={colors.white}
-              name="chevron.left"
-              size={24}
-            />
-          </Pressable>
-
-          <Text
-            className="mt-6 text-[30px] font-bold leading-[37px] text-white"
-            numberOfLines={2}
-          >
-            {application.companyName}
-          </Text>
-          <Text className="mt-2 text-[15px] font-semibold leading-[22px] text-white/76">
-            {application.roleTitle}
-          </Text>
-        </LinearGradient>
+        ></LinearGradient>
 
         <View className="-mt-4 gap-5 px-6">
           <View

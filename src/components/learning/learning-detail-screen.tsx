@@ -29,17 +29,9 @@ export function LearningDetailScreen({
 
   return (
     <View className="flex-1 bg-[#F6F2FF]">
-      <ScrollView
-        automaticallyAdjustContentInsets={false}
-        className="flex-1"
-        contentContainerStyle={{
-          flexGrow: 1,
-          paddingBottom: insets.bottom + 24,
-          paddingHorizontal: 24,
-          paddingTop: Math.max(insets.top + 12, 32),
-        }}
-        contentInsetAdjustmentBehavior="never"
-        showsVerticalScrollIndicator={false}
+      <View
+        className="bg-[#F6F2FF] px-6"
+        style={{ paddingTop: Math.max(insets.top + 12, 32), paddingBottom: 12 }}
       >
         <Pressable
           accessibilityLabel="Go back"
@@ -56,7 +48,20 @@ export function LearningDetailScreen({
             style={{ transform: [{ rotate: "180deg" }] }}
           />
         </Pressable>
+      </View>
 
+      <ScrollView
+        automaticallyAdjustContentInsets={false}
+        className="flex-1"
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingBottom: insets.bottom + 24,
+          paddingHorizontal: 24,
+          paddingTop: 8,
+        }}
+        contentInsetAdjustmentBehavior="never"
+        showsVerticalScrollIndicator={false}
+      >
         <View
           className="mt-6 rounded-[28px] bg-white px-6 py-8"
           style={{ boxShadow: "0 12px 28px rgba(13, 19, 43, 0.08)" }}

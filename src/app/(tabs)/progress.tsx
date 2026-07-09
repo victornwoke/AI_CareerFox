@@ -441,6 +441,40 @@ export default function ProgressScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <LinearGradient
+        colors={gradients.primary}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={{
+          paddingHorizontal: horizontalPadding,
+          paddingTop: Math.max(insets.top + 12, 32),
+          paddingBottom: 14,
+        }}
+      >
+        <View className="flex-row items-center justify-between">
+          <Text
+            adjustsFontSizeToFit
+            className="flex-1 text-[31px] font-bold leading-[38px] text-white"
+            minimumFontScale={0.78}
+            numberOfLines={1}
+          >
+            My Progress
+          </Text>
+          <View className="ml-4 h-[54px] flex-row items-center justify-center rounded-full bg-white/18 px-6">
+            <Text className="text-[16px] font-bold leading-[21px] text-white">
+              This Week
+            </Text>
+            <SymbolIcon
+              accessibilityLabel="Select progress period"
+              color={colors.white}
+              name="chevron.down"
+              size={18}
+              style={{ marginLeft: 8 }}
+            />
+          </View>
+        </View>
+      </LinearGradient>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F7F4FF]"
@@ -459,32 +493,9 @@ export default function ProgressScreen() {
             borderBottomRightRadius: 48,
             paddingBottom: 30,
             paddingHorizontal: horizontalPadding,
-            paddingTop: Math.max(insets.top + 12, 32),
+            paddingTop: 8,
           }}
         >
-          <View className="flex-row items-center justify-between">
-            <Text
-              adjustsFontSizeToFit
-              className="flex-1 text-[31px] font-bold leading-[38px] text-white"
-              minimumFontScale={0.78}
-              numberOfLines={1}
-            >
-              My Progress
-            </Text>
-            <View className="ml-4 h-[54px] flex-row items-center justify-center rounded-full bg-white/18 px-6">
-              <Text className="text-[16px] font-bold leading-[21px] text-white">
-                This Week
-              </Text>
-              <SymbolIcon
-                accessibilityLabel="Select progress period"
-                color={colors.white}
-                name="chevron.down"
-                size={18}
-                style={{ marginLeft: 8 }}
-              />
-            </View>
-          </View>
-
           <View className="mt-6 flex-row gap-3">
             <ProgressStatCard
               detail="+23 from last week"

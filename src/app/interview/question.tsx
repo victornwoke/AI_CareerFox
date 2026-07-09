@@ -337,6 +337,53 @@ export default function InterviewQuestionScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <View
+        className="bg-white px-6 pb-4"
+        style={{ paddingTop: Math.max(insets.top + 12, 32) }}
+      >
+        <View className="flex-row items-center gap-4">
+          <Pressable
+            accessibilityLabel="Back to lesson intro"
+            accessibilityRole="button"
+            className="h-[48px] w-[48px] items-center justify-center rounded-full bg-[#F3EEFF]"
+            onPress={goBack}
+          >
+            <SymbolIcon
+              accessibilityLabel="Back"
+              color={colors.primary}
+              name="chevron.left"
+              size={24}
+            />
+          </Pressable>
+
+          <View className="flex-1">
+            <Text
+              adjustsFontSizeToFit
+              className="text-[22px] font-bold leading-[27px] text-text-primary"
+              minimumFontScale={0.78}
+              numberOfLines={1}
+            >
+              Behavioral Questions
+            </Text>
+            <Text className="text-[17px] font-semibold leading-[22px] text-[#8F92A8]">
+              Question {lesson.lessonNumber} of {lessons.length}
+            </Text>
+          </View>
+
+          <View className="h-10 flex-row items-center gap-1.5 rounded-full bg-[#EEE9FF] px-3">
+            <SymbolIcon
+              accessibilityLabel="Timer"
+              color={colors.primary}
+              name="clock"
+              size={18}
+            />
+            <Text className="text-[17px] font-bold leading-[22px] text-primary">
+              3:45
+            </Text>
+          </View>
+        </View>
+      </View>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F6F2FF]"
@@ -348,52 +395,7 @@ export default function InterviewQuestionScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View
-          className="bg-white px-6 pb-5"
-          style={{ paddingTop: Math.max(insets.top + 12, 32) }}
-        >
-          <View className="flex-row items-center gap-4">
-            <Pressable
-              accessibilityLabel="Back to lesson intro"
-              accessibilityRole="button"
-              className="h-[48px] w-[48px] items-center justify-center rounded-full bg-[#F3EEFF]"
-              onPress={goBack}
-            >
-              <SymbolIcon
-                accessibilityLabel="Back"
-                color={colors.primary}
-                name="chevron.left"
-                size={24}
-              />
-            </Pressable>
-
-            <View className="flex-1">
-              <Text
-                adjustsFontSizeToFit
-                className="text-[22px] font-bold leading-[27px] text-text-primary"
-                minimumFontScale={0.78}
-                numberOfLines={1}
-              >
-                Behavioral Questions
-              </Text>
-              <Text className="text-[17px] font-semibold leading-[22px] text-[#8F92A8]">
-                Question {lesson.lessonNumber} of {lessons.length}
-              </Text>
-            </View>
-
-            <View className="h-10 flex-row items-center gap-1.5 rounded-full bg-[#EEE9FF] px-3">
-              <SymbolIcon
-                accessibilityLabel="Timer"
-                color={colors.primary}
-                name="clock"
-                size={18}
-              />
-              <Text className="text-[17px] font-bold leading-[22px] text-primary">
-                3:45
-              </Text>
-            </View>
-          </View>
-
+        <View className="bg-white px-6 pb-5" style={{ paddingTop: 8 }}>
           <View className="mt-5 h-3 overflow-hidden rounded-full bg-[#E8DFFF]">
             <View
               className="h-3 rounded-full bg-primary"

@@ -158,6 +158,31 @@ export default function LessonIntroScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <LinearGradient
+        colors={gradients.bluePurple}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={{
+          paddingHorizontal: 24,
+          paddingTop: Math.max(insets.top + 12, 32),
+          paddingBottom: 12,
+        }}
+      >
+        <Pressable
+          accessibilityLabel="Back to lessons"
+          accessibilityRole="button"
+          className="h-[48px] w-[48px] items-center justify-center rounded-full bg-white/18"
+          onPress={goBack}
+        >
+          <SymbolIcon
+            accessibilityLabel="Back"
+            color={colors.white}
+            name="chevron.left"
+            size={24}
+          />
+        </Pressable>
+      </LinearGradient>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F6F2FF]"
@@ -177,23 +202,9 @@ export default function LessonIntroScreen() {
             borderBottomRightRadius: 36,
             paddingBottom: 38,
             paddingHorizontal: 24,
-            paddingTop: Math.max(insets.top + 12, 32),
+            paddingTop: 8,
           }}
         >
-          <Pressable
-            accessibilityLabel="Back to lessons"
-            accessibilityRole="button"
-            className="h-[48px] w-[48px] items-center justify-center rounded-full bg-white/18"
-            onPress={goBack}
-          >
-            <SymbolIcon
-              accessibilityLabel="Back"
-              color={colors.white}
-              name="chevron.left"
-              size={24}
-            />
-          </Pressable>
-
           <View className="mt-6 flex-row flex-wrap gap-3">
             <View className="rounded-full bg-white/20 px-5 py-2">
               <Text className="text-[16px] font-bold leading-[22px] text-white">

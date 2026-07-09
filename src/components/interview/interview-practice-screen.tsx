@@ -420,6 +420,50 @@ export function InterviewPracticeScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <LinearGradient
+        colors={gradients.primary}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={{
+          paddingHorizontal: horizontalPadding,
+          paddingTop: Math.max(insets.top + 12, 32),
+          paddingBottom: 14,
+        }}
+      >
+        <View className="h-10 flex-row items-center">
+          <Pressable
+            accessibilityLabel="Back"
+            accessibilityRole="button"
+            className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
+            onPress={goBack}
+          >
+            <SymbolIcon
+              accessibilityLabel="Back"
+              color={colors.white}
+              name="chevron.left"
+              size={20}
+            />
+          </Pressable>
+          <Text
+            adjustsFontSizeToFit
+            className="flex-1 text-center text-[22px] font-bold leading-[28px] text-white"
+            minimumFontScale={0.82}
+            numberOfLines={1}
+          >
+            Interview Practice
+          </Text>
+          <View className="h-10 w-10" />
+        </View>
+        <Text
+          adjustsFontSizeToFit
+          className="mt-1 text-center text-[14px] font-semibold leading-[20px] text-white/70"
+          minimumFontScale={0.78}
+          numberOfLines={2}
+        >
+          Practice with AI and build stronger interview confidence.
+        </Text>
+      </LinearGradient>
+
       <ScrollView
         automaticallyAdjustContentInsets={false}
         className="flex-1 bg-[#F6F2FF]"
@@ -438,42 +482,9 @@ export function InterviewPracticeScreen() {
             borderBottomRightRadius: 36,
             paddingBottom: 34,
             paddingHorizontal: horizontalPadding,
-            paddingTop: Math.max(insets.top + 12, 32),
+            paddingTop: 8,
           }}
         >
-          <View className="h-10 flex-row items-center">
-            <Pressable
-              accessibilityLabel="Back"
-              accessibilityRole="button"
-              className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
-              onPress={goBack}
-            >
-              <SymbolIcon
-                accessibilityLabel="Back"
-                color={colors.white}
-                name="chevron.left"
-                size={20}
-              />
-            </Pressable>
-            <Text
-              adjustsFontSizeToFit
-              className="flex-1 text-center text-[22px] font-bold leading-[28px] text-white"
-              minimumFontScale={0.82}
-              numberOfLines={1}
-            >
-              Interview Practice
-            </Text>
-            <View className="h-10 w-10" />
-          </View>
-          <Text
-            adjustsFontSizeToFit
-            className="mt-1 text-center text-[14px] font-semibold leading-[20px] text-white/70"
-            minimumFontScale={0.78}
-            numberOfLines={2}
-          >
-            Practice with AI and build stronger interview confidence.
-          </Text>
-
           <View className="mt-4 flex-row items-center gap-3">
             <View className="h-[78px] w-[82px] items-center justify-end">
               <Image
