@@ -173,7 +173,7 @@ async function readGeminiErrorMessage(response: Response): Promise<string> {
 
 function mapGeminiHttpError(
   status: number,
-  _upstreamMessage: string,
+  upstreamMessage: string,
 ): AiProviderError {
   if (status === 401 || status === 403) {
     return new AiProviderError(
@@ -194,9 +194,13 @@ function mapGeminiHttpError(
   }
 
   if (status >= 400) {
+    const trimmedMessage = upstreamMessage.trim();
+
     return new AiProviderError(
-      "CareerFox AI could not process this request right now.",
-      502,
+      trimmedMessage.length > 0
+        ? trimmedMessage
+        : "CareerFox AI could not process this request right now.",
+      400,
     );
   }
 

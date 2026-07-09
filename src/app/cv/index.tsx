@@ -321,7 +321,7 @@ export default function CvScreen() {
         start={{ x: 0, y: 0 }}
         style={{
           paddingHorizontal: isNarrow ? 20 : 24,
-          paddingTop: Math.max(insets.top - 20, 18),
+          paddingTop: Math.max(insets.top - 8, 24),
           paddingBottom: isPhone ? 8 : 14,
         }}
       >
@@ -520,12 +520,7 @@ export default function CvScreen() {
               </View>
             ) : null}
 
-            {cvFileUnsupported ? (
-              <Text className="mt-3 text-[12px] font-semibold leading-[18px] text-[#8F92A8]">
-                Pre-read failed — CareerFox will extract text from this file
-                when you tap Analyse.
-              </Text>
-            ) : null}
+            {/* File extraction no longer required — vision models handle raw PDFs */}
           </View>
 
           <View
@@ -609,12 +604,7 @@ export default function CvScreen() {
               </View>
             ) : null}
 
-            {jobDescriptionFileUnsupported && !trimmedJobDescription ? (
-              <Text className="mt-3 text-[12px] font-semibold leading-[18px] text-[#8F92A8]">
-                We could not read that file. Paste the job description text, or
-                upload a .txt, .rtf, .docx, or .pdf file.
-              </Text>
-            ) : null}
+            {/* File extraction no longer required — vision models handle raw PDFs */}
 
             <TextInput
               accessibilityLabel="Job description"

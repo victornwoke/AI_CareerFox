@@ -310,20 +310,31 @@ export default function ProfileScreen() {
         start={{ x: 0, y: 0 }}
         style={{
           paddingHorizontal: isNarrow ? 20 : 24,
-          paddingTop: Math.max(insets.top - 20, 18),
+          paddingTop: Math.max(insets.top - 8, 24),
           paddingBottom: 12,
         }}
       >
         <View className="flex-row items-center justify-between">
-          <Pressable
-            accessibilityLabel="Back to home"
-            accessibilityRole="button"
-            className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
-            hitSlop={10}
-            onPress={() => router.push(homeHref)}
-          >
-            <SymbolIcon color={colors.white} name="chevron.left" size={22} />
-          </Pressable>
+          <View className="flex-1 flex-row items-center gap-3">
+            <Pressable
+              accessibilityLabel="Back to home"
+              accessibilityRole="button"
+              className="h-10 w-10 items-center justify-center rounded-full bg-white/18"
+              hitSlop={10}
+              onPress={() => router.push(homeHref)}
+            >
+              <SymbolIcon color={colors.white} name="chevron.left" size={22} />
+            </Pressable>
+
+            <Text
+              adjustsFontSizeToFit
+              className="text-[31px] font-bold leading-[38px] text-white"
+              minimumFontScale={0.78}
+              numberOfLines={1}
+            >
+              My Profile
+            </Text>
+          </View>
 
           <Pressable
             accessibilityLabel="Sign out"

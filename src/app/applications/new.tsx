@@ -134,7 +134,7 @@ export default function NewApplicationScreen() {
         start={{ x: 0, y: 0 }}
         style={{
           paddingHorizontal: 24,
-          paddingTop: Math.max(insets.top - 20, 18),
+          paddingTop: Math.max(insets.top - 8, 24),
           paddingBottom: 14,
         }}
       >

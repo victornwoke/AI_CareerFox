@@ -1,4 +1,8 @@
-import { AiProviderError, getAiProvider } from "@/lib/ai/aiProvider";
+import {
+    AiProviderError,
+    getAiProvider,
+    getCvAiProvider,
+} from "@/lib/ai/aiProvider";
 import {
     careerCoachRules,
     cvCoachRules,
@@ -95,8 +99,6 @@ export type CvFeedbackOutput = {
     atsReadability: number;
     roleAlignment: number;
   };
-  /** True when the result was produced by the local offline fallback rather than the AI provider. */
-  isAiFallback?: true;
 };
 
 export type GeneratePracticeQuestionInput = {
@@ -1176,10 +1178,6 @@ export async function createInterviewFeedback(
 
     return normalizeInterviewFeedback(response);
   } catch (error) {
-    if (shouldUseLocalAiFallback(error)) {
-      return createLocalInterviewFeedback(input);
-    }
-
     throw error;
   }
 }
@@ -1194,7 +1192,7 @@ export async function createCvFeedback(
       : null;
 
   // When text extraction fails but we have the raw file, send it directly
-  // to Gemini as inline data — Gemini reads PDFs and DOCX natively.
+  // to OpenRouter's vision model — it reads PDFs and DOCX natively.
   const cvInlineFile: { data: string; mimeType: string } | null =
     !resolvedCvText && input.cvFile
       ? {
@@ -1203,13 +1201,11 @@ export async function createCvFeedback(
         }
       : null;
 
-  if (!resolvedCvText) {
-    if (!input.cvFile) {
-      throw new PublicApiError(
-        "Please upload your CV so CareerFox can review it.",
-        422,
-      );
-    }
+  if (!resolvedCvText && !input.cvFile) {
+    throw new PublicApiError(
+      "Please upload your CV so CareerFox can review it.",
+      422,
+    );
   }
 
   const resolvedJobDescription = input.jobDescription?.trim()
@@ -1268,7 +1264,7 @@ export async function createCvFeedback(
     .join("\n");
 
   try {
-    const response = await fetchGeminiStructuredJson(
+    const response = await fetchCvStructuredJson(
       prompt,
       cvFeedbackSchema,
       inlineFiles.length > 0 ? inlineFiles : undefined,
@@ -1283,7 +1279,7 @@ export async function createCvFeedback(
     if (jdInlineFile) {
       try {
         const retryInlineFiles = cvInlineFile ? [cvInlineFile] : undefined;
-        const retryResponse = await fetchGeminiStructuredJson(
+        const retryResponse = await fetchCvStructuredJson(
           prompt,
           cvFeedbackSchema,
           retryInlineFiles,
@@ -1292,18 +1288,6 @@ export async function createCvFeedback(
         return normalizeCvFeedback(retryResponse);
       } catch (retryError) {
         finalError = retryError;
-      }
-    }
-
-    // For rate limit (429), allow fallback even for uploads since it's temporary.
-    // For other errors (502/504), only allow fallback for text-based CVs.
-    if (shouldUseLocalAiFallback(finalError)) {
-      // 429 is temporary; safe to use local fallback for any CV.
-      // 502/504 are server errors; for uploads, we don't have the full document text,
-      // so fake analysis is worse than an error.
-      const status = (finalError as { status?: number }).status;
-      if (status === 429 || inlineFiles.length === 0) {
-        return createLocalCvFeedback(resolvedInput);
       }
     }
 
@@ -1347,10 +1331,6 @@ export async function createPracticeQuestion(
 
     return normalizePracticeQuestion(response, input.category);
   } catch (error) {
-    if (shouldUseLocalAiFallback(error)) {
-      return createLocalPracticeQuestion(input);
-    }
-
     throw error;
   }
 }
@@ -1386,10 +1366,6 @@ export async function createInterviewQuestions(
 
     return normalizeInterviewQuestions(response, input.category, count);
   } catch (error) {
-    if (shouldUseLocalAiFallback(error)) {
-      return createLocalInterviewQuestions(input, count);
-    }
-
     throw error;
   }
 }
@@ -1423,10 +1399,6 @@ export async function createLearningCategories(
 
     return normalizeLearningCategories(response);
   } catch (error) {
-    if (shouldUseLocalAiFallback(error)) {
-      return createLocalLearningCategories(input);
-    }
-
     throw error;
   }
 }
@@ -1455,10 +1427,6 @@ export async function createRoleLearningPlan(
 
     return normalizeRoleLearningPlan(response);
   } catch (error) {
-    if (shouldUseLocalAiFallback(error)) {
-      return createLocalRoleLearningPlan(input);
-    }
-
     throw error;
   }
 }
@@ -1488,319 +1456,8 @@ export async function createLesson(
 
     return normalizeLesson(response);
   } catch (error) {
-    if (shouldUseLocalAiFallback(error)) {
-      return createLocalLesson(input);
-    }
-
     throw error;
   }
-}
-
-function shouldUseLocalAiFallback(error: unknown): boolean {
-  return (
-    error instanceof AiProviderError &&
-    (error.status === 429 || error.status === 502 || error.status === 504)
-  );
-}
-
-function clampScore(value: number): number {
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function pickKeywords(targetRole: string, jobDescription?: string): string[] {
-  const stopWords = new Set([
-    "and",
-    "the",
-    "for",
-    "with",
-    "your",
-    "from",
-    "that",
-    "this",
-    "into",
-    "role",
-    "experience",
-    "level",
-    "skills",
-  ]);
-
-  const source = `${targetRole} ${jobDescription ?? ""}`.toLowerCase();
-  const tokens = source.match(/[a-z][a-z0-9+-]{2,}/g) ?? [];
-  const unique: string[] = [];
-
-  for (const token of tokens) {
-    if (stopWords.has(token)) {
-      continue;
-    }
-
-    if (!unique.includes(token)) {
-      unique.push(token);
-    }
-  }
-
-  if (unique.length > 0) {
-    return unique.slice(0, 6);
-  }
-
-  return [
-    "stakeholder communication",
-    "measurable impact",
-    "prioritization",
-    "execution",
-  ];
-}
-
-function splitCvBullets(cvText: string): string[] {
-  const candidates = cvText
-    .split(/\r?\n|[.!?]\s+/)
-    .map((line) => line.trim())
-    .filter((line) => line.length >= 20);
-
-  if (candidates.length > 0) {
-    return candidates;
-  }
-
-  return [cvText.trim()].filter((line) => line.length > 0);
-}
-
-function createLocalInterviewFeedback(
-  input: InterviewFeedbackInput,
-): InterviewFeedbackOutput {
-  const answerLength = input.answer.trim().length;
-  const baseScore = answerLength > 420 ? 78 : answerLength > 220 ? 70 : 60;
-  const relevanceBoost = input.jobDescription ? 6 : 2;
-  const score = clampScore(baseScore + relevanceBoost);
-
-  return {
-    categories: {
-      clarity: clampScore(score - 2),
-      confidence: clampScore(score - 4),
-      relevance: clampScore(score + 1),
-      starQuality: clampScore(
-        input.category === "behavioral" ? score : score - 5,
-      ),
-      structure: clampScore(score - 1),
-    },
-    improvedAnswer:
-      "Situation: Define the context in one sentence. Task: State the goal and constraint. Action: Explain two concrete decisions you made. Result: Quantify the impact with one real metric or clear outcome.",
-    improvements: [
-      "Open with a one-line summary before details so the interviewer immediately understands your point.",
-      "Add one concrete metric or business outcome to prove impact.",
-    ],
-    nextPracticeSuggestion:
-      "Rehearse a 60-second STAR answer for this question and tighten each section to one sentence.",
-    score,
-    strengths: [
-      `Your answer shows relevant experience for ${input.targetRole}.`,
-      "You provide useful context instead of only listing actions.",
-    ],
-    summary:
-      "Strong foundation with clear role alignment; add sharper structure and quantified impact for a stronger interview response.",
-  };
-}
-
-function createLocalCvFeedback(
-  input: ResolvedCvFeedbackInput,
-): CvFeedbackOutput {
-  const bullets = splitCvBullets(input.cvText);
-  const weakBullets = bullets.slice(0, 3);
-  const scoreBase =
-    input.cvText.length > 900 ? 76 : input.cvText.length > 350 ? 68 : 58;
-  const score = clampScore(scoreBase + (input.jobDescription ? 4 : 0));
-  const keywordGaps = pickKeywords(input.targetRole, input.jobDescription);
-
-  return {
-    categories: {
-      atsReadability: clampScore(score - 3),
-      clarity: clampScore(score + 1),
-      impact: clampScore(score - 4),
-      relevance: clampScore(score + (input.jobDescription ? 2 : -1)),
-      roleAlignment: clampScore(score),
-    },
-    improvedBullets: weakBullets.map(
-      (bullet) =>
-        `Refine: ${bullet} — include your ownership, scope, and one measurable outcome (add a real metric if accurate).`,
-    ),
-    isAiFallback: true as const,
-    keywordGaps,
-    nextActions: [
-      "Rewrite your top three bullets with action + scope + measurable result.",
-      "Mirror role-relevant keywords in summary and skills only where accurate.",
-      "Move your strongest role-matching achievement into the first third of the CV.",
-    ],
-    score,
-    summary:
-      "Your CV has a good base. Improve measurable impact and role-specific phrasing to increase clarity and ATS relevance.",
-    weakBullets,
-  };
-}
-
-function createLocalPracticeQuestion(
-  input: GeneratePracticeQuestionInput,
-): GeneratePracticeQuestionOutput {
-  const difficulty = input.difficulty ?? "intermediate";
-
-  const questionByCategory: Record<InterviewCategory, string> = {
-    behavioral: `Tell me about a time you influenced a difficult decision as a ${input.targetRole}.`,
-    case: `How would you break down a complex problem in your first 30 days as a ${input.targetRole}?`,
-    hr: `Why are you targeting ${input.targetRole}, and what value would you bring in the first 90 days?`,
-    technical: `Describe a technically challenging project relevant to ${input.targetRole} and how you delivered it.`,
-  };
-
-  return {
-    answerTips: [
-      "Lead with context in one sentence before detailing actions.",
-      "Highlight your decision-making process and trade-offs.",
-      "Close with one measurable result or concrete outcome.",
-    ],
-    category: input.category,
-    difficulty,
-    expectedStructure:
-      input.category === "behavioral"
-        ? "STAR"
-        : input.category === "technical"
-          ? "XYZ"
-          : "freeform",
-    question: questionByCategory[input.category],
-    whyThisQuestionMatters:
-      "This question tests role-relevant thinking, ownership, and your ability to communicate impact clearly.",
-  };
-}
-
-function createLocalInterviewQuestions(
-  input: GenerateInterviewQuestionsInput,
-  count: number,
-): GenerateInterviewQuestionsOutput {
-  const safeCount = Math.max(1, Math.min(maxGeneratedQuestions, count));
-  const questions: GeneratePracticeQuestionOutput[] = [];
-
-  for (let index = 0; index < safeCount; index += 1) {
-    const base = createLocalPracticeQuestion({
-      ...input,
-      difficulty: input.difficulty ?? "intermediate",
-    });
-
-    questions.push({
-      ...base,
-      question: `${base.question} (Focus ${index + 1})`,
-    });
-  }
-
-  return { questions };
-}
-
-function createLocalLearningCategories(
-  input: GenerateLearningCategoriesInput,
-): GenerateLearningCategoriesOutput {
-  return {
-    categories: [
-      {
-        description: `Build interview stories and delivery confidence for ${input.targetRole}.`,
-        destination: "interview",
-        id: "interview-core",
-        priority: 1,
-        starterLessonTitle: "Answer structure for high-impact responses",
-        title: "Interview Core",
-      },
-      {
-        description:
-          "Strengthen measurable impact statements and ATS readability.",
-        destination: "cv",
-        id: "cv-impact",
-        priority: 2,
-        starterLessonTitle: "Rewrite weak bullets with clear outcomes",
-        title: "CV Impact",
-      },
-      {
-        description:
-          "Improve role targeting and application quality with focused evidence.",
-        destination: "applications",
-        id: "application-strategy",
-        priority: 3,
-        starterLessonTitle: "Tailor your application to the job description",
-        title: "Application Strategy",
-      },
-      {
-        description:
-          "Close the highest-priority skill gaps for your target role.",
-        destination: "detail",
-        id: "skill-gap-plan",
-        priority: 4,
-        starterLessonTitle: "Choose one high-leverage skill for this week",
-        title: "Skill Gap Plan",
-      },
-    ],
-  };
-}
-
-function createLocalRoleLearningPlan(
-  input: GenerateRoleLearningPlanInput,
-): GenerateRoleLearningPlanOutput {
-  return {
-    modules: [
-      {
-        description:
-          "Define a role-targeted achievement narrative and measurable outcomes.",
-        estimatedMinutes: 15,
-        id: sanitizeKebabId("role-story-foundation"),
-        title: "Role Story Foundation",
-        type: "learn",
-        xp: 30,
-      },
-      {
-        description:
-          "Practice concise STAR/XYZ answers for your highest-frequency interview themes.",
-        estimatedMinutes: 20,
-        id: sanitizeKebabId("answer-drills"),
-        title: "Answer Drills",
-        type: "practice",
-        xp: 40,
-      },
-      {
-        description: `Run a timed mock interview round for ${input.targetRole}.`,
-        estimatedMinutes: 25,
-        id: sanitizeKebabId("mock-round"),
-        title: "Mock Round",
-        type: "mock_interview",
-        xp: 50,
-      },
-      {
-        description:
-          "Upgrade your CV bullets with quantified impact and stronger action verbs.",
-        estimatedMinutes: 18,
-        id: sanitizeKebabId("cv-upgrade"),
-        title: "CV Upgrade",
-        type: "cv",
-        xp: 35,
-      },
-    ],
-    summary:
-      "A short practical plan to sharpen interview communication, CV evidence, and role alignment in one focused cycle.",
-    title: `${input.targetRole} Focus Sprint`,
-  };
-}
-
-function createLocalLesson(input: GenerateLessonInput): GenerateLessonOutput {
-  return {
-    coachingSteps: [
-      "Start with one concrete example from your own work, not a generic statement.",
-      "Explain your decision process and trade-offs in simple, direct language.",
-      "Finish with measurable impact or a clear result.",
-    ],
-    estimatedMinutes: 10,
-    learningOutcomes: [
-      "Identify what interviewers are evaluating in this topic.",
-      "Structure your answer using a repeatable framework.",
-      "Deliver concise, role-relevant outcomes.",
-    ],
-    overview:
-      "This lesson helps you turn experience into structured, impact-focused responses you can use immediately.",
-    practicePrompt:
-      input.question ??
-      `Draft a 60-second response for a common ${input.targetRole} scenario and include one measurable outcome.`,
-    title: input.lessonTitle ?? `${input.categoryTitle}: practical coaching`,
-    xp: 25,
-  };
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -2296,6 +1953,20 @@ async function fetchGeminiStructuredJson(
     prompt,
     schema,
   });
+}
+
+/**
+ * CV-specific fetch helper.
+ * Routes to OpenRouter with support for both text and vision models.
+ * Text-only requests use text models for better performance.
+ * Requests with inline files use vision models for PDF/DOCX analysis.
+ */
+async function fetchCvStructuredJson(
+  prompt: string,
+  schema: JsonSchema,
+  inlineFiles?: { data: string; mimeType: string }[],
+): Promise<unknown> {
+  return getCvAiProvider().generateJson({ prompt, schema, inlineFiles });
 }
 
 function normalizeInterviewFeedback(value: unknown): InterviewFeedbackOutput {

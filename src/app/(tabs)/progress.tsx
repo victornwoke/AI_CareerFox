@@ -1,6 +1,13 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { type ReactNode, useMemo } from "react";
-import { ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { type ReactNode, useMemo, useState } from "react";
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SymbolIcon } from "@/components/ui/SymbolIcon";
@@ -85,11 +92,13 @@ const getValidPracticeDate = (item: InterviewPracticeHistoryItem) => {
 const buildQuestionBars = ({
   completedQuestionIds,
   practiceHistory,
+  dayCount = 7,
 }: {
   completedQuestionIds: string[];
+  dayCount?: number;
   practiceHistory: InterviewPracticeHistoryItem[];
 }): BarDatum[] => {
-  const buckets = getRecentDayBuckets(7);
+  const buckets = getRecentDayBuckets(dayCount);
   const bucketByKey = new Map(buckets.map((bucket) => [bucket.key, bucket]));
   const completedQuestionIdSet = new Set(completedQuestionIds);
   const completionDateByQuestionId = new Map<string, string>();
@@ -146,11 +155,13 @@ const buildQuestionBars = ({
 const buildScoreTrendPoints = ({
   practiceHistory,
   readinessScore,
+  dayCount = 6,
 }: {
+  dayCount?: number;
   practiceHistory: InterviewPracticeHistoryItem[];
   readinessScore: number;
 }): TrendPoint[] => {
-  const buckets = getRecentDayBuckets(6);
+  const buckets = getRecentDayBuckets(dayCount);
   const bucketByKey = new Map(buckets.map((bucket) => [bucket.key, bucket]));
 
   practiceHistory.forEach((item) => {
@@ -405,6 +416,10 @@ function CategoryRow({ color, label, value }: CategoryRowProps) {
 export default function ProgressScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const [selectedPeriod, setSelectedPeriod] = useState<
+    "week" | "month" | "all"
+  >("week");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const completedQuestionIds = useInterviewStore(
     (state) => state.completedQuestionIds,
   );
@@ -413,13 +428,46 @@ export default function ProgressScreen() {
   const isNarrow = width < 370;
   const horizontalPadding = isNarrow ? 20 : 24;
   const chartInnerWidth = Math.max(1, width - horizontalPadding * 2 - 32);
+
+  const dayCount = useMemo(() => {
+    switch (selectedPeriod) {
+      case "week":
+        return 7;
+      case "month":
+        return 30;
+      case "all": {
+        if (practiceHistory.length === 0) {
+          return 7;
+        }
+
+        const earliestPracticeTime = Math.min(
+          ...practiceHistory.map((item) =>
+            new Date(item.practicedAt).getTime(),
+          ),
+        );
+        // eslint-disable-next-line
+        const daysSinceFirstPractice = Math.ceil(
+          // eslint-disable-next-line
+          (Date.now() - earliestPracticeTime) / (1000 * 60 * 60 * 24),
+        );
+
+        return daysSinceFirstPractice + 1;
+      }
+
+      default:
+        return 7;
+    }
+  }, [selectedPeriod, practiceHistory]);
+
+  const getDayCount = () => dayCount;
   const questionBars = useMemo(
-    () => buildQuestionBars({ completedQuestionIds, practiceHistory }),
-    [completedQuestionIds, practiceHistory],
+    () =>
+      buildQuestionBars({ completedQuestionIds, practiceHistory, dayCount }),
+    [completedQuestionIds, practiceHistory, dayCount],
   );
   const scoreTrendPoints = useMemo(
-    () => buildScoreTrendPoints({ practiceHistory, readinessScore }),
-    [practiceHistory, readinessScore],
+    () => buildScoreTrendPoints({ practiceHistory, readinessScore, dayCount }),
+    [practiceHistory, readinessScore, dayCount],
   );
   const answeredQuestions = completedQuestionIds.length;
   const avgScore = clampPercent(readinessScore);
@@ -447,7 +495,7 @@ export default function ProgressScreen() {
         start={{ x: 0, y: 0 }}
         style={{
           paddingHorizontal: horizontalPadding,
-          paddingTop: Math.max(insets.top - 20, 18),
+          paddingTop: Math.max(insets.top - 8, 24),
           paddingBottom: 14,
         }}
       >
@@ -460,9 +508,16 @@ export default function ProgressScreen() {
           >
             My Progress
           </Text>
-          <View className="ml-4 h-[54px] flex-row items-center justify-center rounded-full bg-white/18 px-6">
+          <Pressable
+            onPress={() => setIsDropdownOpen(true)}
+            className="ml-4 h-[54px] flex-row items-center justify-center rounded-full bg-white/18 px-6"
+          >
             <Text className="text-[16px] font-bold leading-[21px] text-white">
-              This Week
+              {selectedPeriod === "week"
+                ? "This Week"
+                : selectedPeriod === "month"
+                  ? "This Month"
+                  : "All Time"}
             </Text>
             <SymbolIcon
               accessibilityLabel="Select progress period"
@@ -471,9 +526,63 @@ export default function ProgressScreen() {
               size={18}
               style={{ marginLeft: 8 }}
             />
-          </View>
+          </Pressable>
         </View>
       </LinearGradient>
+
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setIsDropdownOpen(false)}
+        transparent
+        visible={isDropdownOpen}
+      >
+        <Pressable
+          className="flex-1 bg-black/40"
+          onPress={() => setIsDropdownOpen(false)}
+        >
+          <View
+            className="absolute top-0 right-0 left-0 flex-row justify-end px-6"
+            pointerEvents="box-none"
+            style={{ paddingTop: Math.max(insets.top - 20, 18) + 54 + 14 + 8 }}
+          >
+            <View className="w-40 overflow-hidden rounded-3xl bg-white shadow-lg">
+              {[
+                { label: "This Week", value: "week" as const },
+                { label: "This Month", value: "month" as const },
+                { label: "All Time", value: "all" as const },
+              ].map((option, index) => (
+                <Pressable
+                  key={option.value}
+                  onPress={() => {
+                    setSelectedPeriod(option.value);
+                    setIsDropdownOpen(false);
+                  }}
+                  className={`flex-row items-center justify-between px-6 py-4 ${
+                    index < 2 ? "border-b border-[#EEEAFD]" : ""
+                  }`}
+                >
+                  <Text
+                    className={`text-[16px] font-semibold leading-[21px] ${
+                      selectedPeriod === option.value
+                        ? "text-primary"
+                        : "text-[#17172B]"
+                    }`}
+                  >
+                    {option.label}
+                  </Text>
+                  {selectedPeriod === option.value && (
+                    <SymbolIcon
+                      color={colors.primary}
+                      name="checkmark"
+                      size={20}
+                    />
+                  )}
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
 
       <ScrollView
         automaticallyAdjustContentInsets={false}

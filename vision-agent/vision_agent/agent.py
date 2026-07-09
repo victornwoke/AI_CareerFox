@@ -85,6 +85,16 @@ def _clean_text(value: object | None, limit: int) -> str | None:
     return text[:limit]
 
 
+def _sanitize_instruction_text(value: str | None) -> str | None:
+    if value is None:
+        return None
+
+    # Vision Agents parses any @token as a markdown file reference.
+    # Replace @ in user-provided content (emails, handles) to avoid
+    # InstructionsReadError when creating the agent.
+    return value.replace("@", "(at)")
+
+
 def _flatten_custom_data(raw: dict[str, Any]) -> dict[str, Any]:
     merged: dict[str, Any] = {}
 
@@ -199,28 +209,38 @@ def extract_session_context(raw: dict[str, Any]) -> CoachSessionContext:
 
 def build_system_instructions(context: CoachSessionContext) -> str:
     category = context.question_category or "behavioral"
+    safe_target_role = _sanitize_instruction_text(context.target_role) or "general role"
+    safe_experience_level = (
+        _sanitize_instruction_text(context.experience_level) or "unspecified"
+    )
+    safe_practice_mode = (
+        _sanitize_instruction_text(context.practice_mode) or "mock_interview"
+    )
+    safe_selected_career_path = _sanitize_instruction_text(context.selected_career_path)
+    safe_current_question = _sanitize_instruction_text(context.current_question)
+    safe_job_description = _sanitize_instruction_text(context.job_description)
 
     question_block = (
-        f"Interview question to ask: {context.current_question}\n"
-        if context.current_question
+        f"Interview question to ask: {safe_current_question}\n"
+        if safe_current_question
         else "Ask one relevant interview question for the target role, category, and experience level.\n"
     )
 
     role_block = (
-        f"Target role: {context.target_role}\n"
-        f"Experience level: {context.experience_level}\n"
-        f"Practice mode: {context.practice_mode}\n"
+        f"Target role: {safe_target_role}\n"
+        f"Experience level: {safe_experience_level}\n"
+        f"Practice mode: {safe_practice_mode}\n"
     )
 
     career_path_block = (
-        f"Selected career path: {context.selected_career_path}\n"
-        if context.selected_career_path
+        f"Selected career path: {safe_selected_career_path}\n"
+        if safe_selected_career_path
         else ""
     )
 
     job_description_block = (
-        f"Job description context:\n{context.job_description}\n"
-        if context.job_description
+        f"Job description context:\n{safe_job_description}\n"
+        if safe_job_description
         else ""
     )
 
