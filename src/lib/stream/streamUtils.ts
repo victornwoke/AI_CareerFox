@@ -33,6 +33,7 @@ export interface StartAiCoachSessionRequest {
   callId: string;
   callType: string;
   context: {
+    cloudProvider?: string;
     currentQuestion?: string;
     experienceLevel?: string;
     jobDescription?: string | null;

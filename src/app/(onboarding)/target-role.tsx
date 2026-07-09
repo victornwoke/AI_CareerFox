@@ -27,6 +27,8 @@ const popularRoleIds = [
   "data-analyst",
 ] as const;
 const popularRoleIdSet = new Set<string>(popularRoleIds);
+const cloudRoleIds: readonly string[] = ["cloud-engineer", "devops-engineer"];
+const cloudProviders = ["AWS", "Azure", "GCP", "Multi-cloud"] as const;
 
 export default function TargetRoleScreen() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -54,12 +56,10 @@ export default function TargetRoleScreen() {
   );
   const cloudProvider = useCareerStore((state) => state.cloudProvider);
   const setCloudProvider = useCareerStore((state) => state.setCloudProvider);
-
-  const cloudRoleIds = ["cloud-engineer", "devops-engineer"];
   const isCloudRole = Boolean(
     selectedRoleId && cloudRoleIds.includes(selectedRoleId),
   );
-  const cloudProviders = ["AWS", "Azure", "GCP", "Multi-cloud"] as const;
+  const isSearching = searchQuery.trim().length > 0;
 
   const filteredRoles = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -104,7 +104,6 @@ export default function TargetRoleScreen() {
         roleTitle: selectedRole?.title ?? null,
       });
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [setSelectedRoleId, setCloudProvider],
   );
 
@@ -209,7 +208,7 @@ export default function TargetRoleScreen() {
               lineHeight: isCompactPhone ? 22 : 24,
             }}
           >
-            Popular roles
+            {isSearching ? "Search results" : "Popular roles"}
           </Text>
           <Text className="text-[13px] font-bold leading-[18px] text-[#8F92A8]">
             {filteredRoles.length} options

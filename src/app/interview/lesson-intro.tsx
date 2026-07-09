@@ -164,7 +164,7 @@ export default function LessonIntroScreen() {
         start={{ x: 0, y: 0 }}
         style={{
           paddingHorizontal: 24,
-          paddingTop: Math.max(insets.top + 12, 32),
+          paddingTop: Math.max(insets.top - 20, 18),
           paddingBottom: 12,
         }}
       >
@@ -188,7 +188,7 @@ export default function LessonIntroScreen() {
         className="flex-1 bg-[#F6F2FF]"
         contentContainerStyle={{
           minHeight: height,
-          paddingBottom: Math.max(insets.bottom, 10),
+          paddingBottom: insets.bottom + 24,
         }}
         contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}

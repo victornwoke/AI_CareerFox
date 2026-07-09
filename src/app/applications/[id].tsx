@@ -168,7 +168,7 @@ export default function ApplicationDetailScreen() {
         start={{ x: 0, y: 0 }}
         style={{
           paddingHorizontal: 24,
-          paddingTop: Math.max(insets.top + 12, 32),
+          paddingTop: Math.max(insets.top - 20, 18),
           paddingBottom: 14,
         }}
       >

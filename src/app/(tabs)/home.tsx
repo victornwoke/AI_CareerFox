@@ -344,7 +344,7 @@ export default function HomeScreen() {
         start={{ x: 0, y: 0 }}
         style={{
           paddingHorizontal: isNarrow ? 20 : 24,
-          paddingTop: Math.max(insets.top + 12, 32),
+          paddingTop: Math.max(insets.top - 20, 18),
           paddingBottom: 12,
         }}
       >

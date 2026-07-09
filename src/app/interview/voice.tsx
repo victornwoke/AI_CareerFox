@@ -634,6 +634,7 @@ export default function VoicePracticeScreen() {
         callId,
         callType: STREAM_CALL_TYPE,
         context: {
+          cloudProvider: cloudProvider ?? undefined,
           currentQuestion: activeQuestion?.question,
           experienceLevel: experienceLabel,
           jobDescription: latestJobDescription ?? null,
@@ -669,6 +670,7 @@ export default function VoicePracticeScreen() {
         create: true,
         data: {
           custom: {
+            cloudProvider: cloudProvider ?? undefined,
             experienceLevel: experienceLabel,
             jobDescription: latestJobDescription ?? null,
             mode: coachMode,

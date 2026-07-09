@@ -483,7 +483,7 @@ export default function LearnScreen() {
         className="bg-[#10B77F]"
         style={{
           paddingHorizontal: horizontalPadding,
-          paddingTop: Math.max(insets.top + 12, 32),
+          paddingTop: Math.max(insets.top - 20, 18),
           paddingBottom: 16,
         }}
       >

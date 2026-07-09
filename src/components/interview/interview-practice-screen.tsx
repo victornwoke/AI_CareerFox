@@ -426,7 +426,7 @@ export function InterviewPracticeScreen() {
         start={{ x: 0, y: 0 }}
         style={{
           paddingHorizontal: horizontalPadding,
-          paddingTop: Math.max(insets.top + 12, 32),
+          paddingTop: Math.max(insets.top - 20, 18),
           paddingBottom: 14,
         }}
       >
