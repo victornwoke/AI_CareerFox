@@ -1247,8 +1247,16 @@ export async function createCvFeedback(
 
     return normalizeCvFeedback(response);
   } catch (error) {
+    // For rate limit (429), allow fallback even for uploads since it's temporary.
+    // For other errors (502/504), only allow fallback for text-based CVs.
     if (shouldUseLocalAiFallback(error)) {
-      return createLocalCvFeedback(resolvedInput);
+      // 429 is temporary; safe to use local fallback for any CV.
+      // 502/504 are server errors; for uploads, we don't have the full document text,
+      // so fake analysis is worse than an error.
+      const status = (error as { status?: number }).status;
+      if (status === 429 || inlineFiles.length === 0) {
+        return createLocalCvFeedback(resolvedInput);
+      }
     }
 
     throw error;
