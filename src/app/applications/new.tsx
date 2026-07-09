@@ -2,12 +2,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  Alert,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
+    Alert,
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -15,8 +15,8 @@ import { SymbolIcon } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import { trackApplicationAdded } from "@/lib/analytics";
 import {
-  type ApplicationStatus,
-  useApplicationStore,
+    type ApplicationStatus,
+    useApplicationStore,
 } from "@/store/useApplicationStore";
 
 type FieldProps = {

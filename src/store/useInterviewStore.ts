@@ -1,10 +1,19 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import type { GeneratedPracticeQuestion } from "@/lib/interviewGeneratedQuestion";
 import { careerFoxStorage } from "@/store/careerFoxStorage";
 import type { PracticeMode } from "@/store/useCareerStore";
 
 export type InterviewPracticeHistoryItem = {
+  category?: "behavioral" | "technical" | "case" | "hr";
+  categoryScores?: {
+    clarity: number;
+    confidence: number;
+    relevance: number;
+    starQuality: number;
+    structure: number;
+  };
   feedbackSummary?: string;
   id: string;
   mode: PracticeMode;
@@ -17,6 +26,7 @@ type InterviewStateData = {
   activeQuestionId: string | null;
   answerDraftsByQuestionId: Record<string, string>;
   completedQuestionIds: string[];
+  generatedPracticeQuestion: GeneratedPracticeQuestion | null;
   lastFeedbackSummary: string | null;
   practiceHistory: InterviewPracticeHistoryItem[];
 };
@@ -24,10 +34,14 @@ type InterviewStateData = {
 type InterviewStateActions = {
   addPracticeHistoryItem: (item: InterviewPracticeHistoryItem) => void;
   clearInterviewTestingState: () => Promise<void>;
+  clearGeneratedPracticeQuestion: () => void;
   markQuestionCompleted: (questionId: string) => void;
   resetInterviewState: () => void;
   setActiveQuestionId: (questionId: string | null) => void;
   setAnswerDraft: (questionId: string, answer: string) => void;
+  setGeneratedPracticeQuestion: (
+    generatedPracticeQuestion: GeneratedPracticeQuestion | null,
+  ) => void;
   setLastFeedbackSummary: (summary: string | null) => void;
   updateInterviewState: (updates: Partial<InterviewStateData>) => void;
 };
@@ -43,6 +57,7 @@ const initialInterviewState: InterviewStateData = {
   activeQuestionId: null,
   answerDraftsByQuestionId: {},
   completedQuestionIds: [],
+  generatedPracticeQuestion: null,
   lastFeedbackSummary: null,
   practiceHistory: [],
 };
@@ -64,6 +79,8 @@ export const useInterviewStore = create<InterviewState>()(
         await useInterviewStore.persist.clearStorage();
         set(initialInterviewState);
       },
+      clearGeneratedPracticeQuestion: () =>
+        set({ generatedPracticeQuestion: null }),
       markQuestionCompleted: (questionId) =>
         set((state) => ({
           completedQuestionIds: addUniqueId(
@@ -81,6 +98,8 @@ export const useInterviewStore = create<InterviewState>()(
             [questionId]: answer,
           },
         })),
+      setGeneratedPracticeQuestion: (generatedPracticeQuestion) =>
+        set({ generatedPracticeQuestion }),
       setLastFeedbackSummary: (summary) =>
         set({ lastFeedbackSummary: summary }),
       updateInterviewState: (updates) => set(updates),
@@ -95,6 +114,7 @@ export const useInterviewStore = create<InterviewState>()(
       partialize: (state): PersistedSafeInterviewState => ({
         activeQuestionId: state.activeQuestionId,
         completedQuestionIds: state.completedQuestionIds,
+        generatedPracticeQuestion: state.generatedPracticeQuestion,
         lastFeedbackSummary: state.lastFeedbackSummary,
         practiceHistory: state.practiceHistory,
       }),

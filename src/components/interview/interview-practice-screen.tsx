@@ -1,23 +1,32 @@
+import { useAuth } from "@clerk/expo";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Pressable,
-  ScrollView,
-  Text,
-  useWindowDimensions,
-  View,
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    Text,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SymbolIcon, type SymbolIconName } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import { images } from "@/constants/images";
+import { experienceLevels } from "@/data/experienceLevels";
 import { interviewCategories } from "@/data/interviewCategories";
 import { interviewQuestions } from "@/data/interviewQuestions";
 import { targetRoles } from "@/data/roles";
+import { postGeneratePracticeQuestion } from "@/lib/api";
+import {
+    createGeneratedPracticeQuestionId,
+    type GeneratedPracticeQuestion,
+} from "@/lib/interviewGeneratedQuestion";
 import { useCareerStore } from "@/store/useCareerStore";
+import { useCvAnalysisStore } from "@/store/useCvAnalysisStore";
 import { useInterviewStore } from "@/store/useInterviewStore";
 import type { InterviewCategory, InterviewQuestion } from "@/types/career";
 
@@ -82,22 +91,15 @@ const interviewModules: InterviewModule[] = [
     statusHint: "in-progress",
     title: "Technical Fundamentals",
   },
-  {
-    category: "hr",
-    icon: "person.crop.circle.fill",
-    minutes: 10,
-    shortTitle: "HR Round",
-    statusHint: "future",
-    title: "HR Interviews",
-  },
-  {
-    category: "case",
-    icon: "chart.bar.xaxis",
-    minutes: 20,
-    shortTitle: "Case",
-    statusHint: "future",
-    title: "Case Interviews",
-  },
+];
+
+const supportedTextPracticeCategories: readonly InterviewCategory["id"][] = [
+  "behavioral",
+];
+
+const supportedVoicePracticeCategories: readonly InterviewCategory["id"][] = [
+  "behavioral",
+  "technical",
 ];
 
 function getModuleStatus({
@@ -185,6 +187,7 @@ function PracticeModeCard({
 
 export function InterviewPracticeScreen() {
   const router = useRouter();
+  const { userId } = useAuth();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isNarrow = width < 370;
@@ -203,12 +206,31 @@ export function InterviewPracticeScreen() {
   const completedQuestionIds = useInterviewStore(
     (state) => state.completedQuestionIds,
   );
+  const latestJobDescription = useCvAnalysisStore(
+    (state) => state.request?.jobDescription,
+  );
+  const generatedPracticeQuestion = useInterviewStore(
+    (state) => state.generatedPracticeQuestion,
+  );
+  const setGeneratedPracticeQuestion = useInterviewStore(
+    (state) => state.setGeneratedPracticeQuestion,
+  );
   const setActiveQuestionId = useInterviewStore(
     (state) => state.setActiveQuestionId,
   );
+  const [generatedStatus, setGeneratedStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [generatedError, setGeneratedError] = useState<string | null>(null);
+  const [practiceUnavailableMessage, setPracticeUnavailableMessage] = useState<
+    string | null
+  >(null);
 
   const selectedRole = targetRoles.find(
     (role) => role.id === selectedTargetRoleId,
+  );
+  const selectedExperienceLevel = experienceLevels.find(
+    (level) => level.id === selectedExperienceLevelId,
   );
   const allowedDifficulties =
     selectedExperienceLevelId === null
@@ -280,6 +302,81 @@ export function InterviewPracticeScreen() {
     (module) => module.category === selectedCategory,
   );
   const selectedModuleTitle = selectedModule?.title ?? "Interview practice";
+  const isSelectedCategoryTextSupported =
+    supportedTextPracticeCategories.includes(selectedCategory);
+  const isSelectedCategoryVoiceSupported =
+    supportedVoicePracticeCategories.includes(selectedCategory);
+
+  const generateRoleAwareQuestion = useCallback(async () => {
+    if (!isSelectedCategoryVoiceSupported) {
+      setGeneratedStatus("idle");
+      setGeneratedError(null);
+      return;
+    }
+
+    if (!userId || !selectedRole || !selectedExperienceLevel) {
+      setGeneratedStatus("idle");
+      setGeneratedError(null);
+      return;
+    }
+
+    setGeneratedStatus("loading");
+    setGeneratedError(null);
+
+    try {
+      const response = await postGeneratePracticeQuestion({
+        category: selectedCategory,
+        difficulty: activeDifficulty,
+        experienceLevel: selectedExperienceLevel.label,
+        jobDescription: latestJobDescription,
+        targetRole: selectedRole.title,
+        userId,
+      });
+
+      const generatedQuestion: GeneratedPracticeQuestion = {
+        createdAt: new Date().toISOString(),
+        id: createGeneratedPracticeQuestionId(),
+        question: response,
+      };
+
+      setGeneratedPracticeQuestion(generatedQuestion);
+      setGeneratedStatus("success");
+    } catch (caughtError) {
+      setGeneratedStatus("error");
+      setGeneratedError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "CareerFox could not generate a role-aware question right now.",
+      );
+    }
+  }, [
+    userId,
+    selectedRole,
+    selectedExperienceLevel,
+    selectedCategory,
+    activeDifficulty,
+    latestJobDescription,
+    isSelectedCategoryVoiceSupported,
+    setGeneratedPracticeQuestion,
+  ]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      void generateRoleAwareQuestion();
+    }, 0);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [generateRoleAwareQuestion]);
+
+  const roleAwareQuestion =
+    generatedPracticeQuestion &&
+    generatedPracticeQuestion.question.category === selectedCategory &&
+    generatedPracticeQuestion.question.difficulty === activeDifficulty
+      ? generatedPracticeQuestion
+      : null;
+
   const goBack = () => {
     if (router.canGoBack()) {
       router.back();
@@ -290,13 +387,33 @@ export function InterviewPracticeScreen() {
   };
 
   const openBehavioralPractice = () => {
+    if (!isSelectedCategoryTextSupported) {
+      setPracticeUnavailableMessage(
+        "Text practice is available for Behavioral right now. Use Voice Practice for Technical interviews.",
+      );
+      return;
+    }
+
     setPreferredPracticeMode("text");
-    setActiveQuestionId(nextQuestion?.id ?? null);
+    setPracticeUnavailableMessage(null);
+    if (selectedCategory === "behavioral" && roleAwareQuestion) {
+      setActiveQuestionId(roleAwareQuestion.id);
+    } else {
+      setActiveQuestionId(nextQuestion?.id ?? null);
+    }
     router.push(behavioralHref);
   };
 
   const openVoicePractice = () => {
+    if (!isSelectedCategoryVoiceSupported) {
+      setPracticeUnavailableMessage(
+        "Voice coaching for this interview type is coming soon.",
+      );
+      return;
+    }
+
     setPreferredPracticeMode("voice");
+    setPracticeUnavailableMessage(null);
     setActiveQuestionId(nextQuestion?.id ?? null);
     router.push(voiceHref);
   };
@@ -354,7 +471,7 @@ export function InterviewPracticeScreen() {
             minimumFontScale={0.78}
             numberOfLines={2}
           >
-            Practice with AI and build real confidence.
+            Practice with AI and build stronger interview confidence.
           </Text>
 
           <View className="mt-4 flex-row items-center gap-3">
@@ -402,12 +519,12 @@ export function InterviewPracticeScreen() {
                     className="h-[56px] items-center justify-center rounded-full"
                     key={module.category}
                     onPress={() => {
+                      setPracticeUnavailableMessage(null);
                       setSelectedCategory(module.category);
                     }}
                     style={{
                       backgroundColor: isSelected ? colors.primary : "#F5F1FF",
-                      width:
-                        (width - horizontalPadding * 2 - 40 - 12) / 2,
+                      width: (width - horizontalPadding * 2 - 40 - 12) / 2,
                     }}
                   >
                     <Text
@@ -481,12 +598,127 @@ export function InterviewPracticeScreen() {
             />
           </View>
 
+          {!isSelectedCategoryVoiceSupported || practiceUnavailableMessage ? (
+            <View className="rounded-[20px] bg-[#FFF7ED] px-4 py-4">
+              <Text className="text-[13px] font-semibold leading-[18px] text-[#C2410C]">
+                {practiceUnavailableMessage ??
+                  "This interview type is coming soon. Behavioral and Technical voice practice are available now."}
+              </Text>
+            </View>
+          ) : null}
+
+          <View
+            className="rounded-[24px] bg-white p-5"
+            style={{
+              borderCurve: "continuous",
+              boxShadow: "0 12px 28px rgba(13, 19, 43, 0.06)",
+            }}
+          >
+            <View className="flex-row items-center justify-between gap-3">
+              <Text className="text-[19px] font-bold leading-[24px] text-text-primary">
+                AI Practice Question
+              </Text>
+              <View className="rounded-full bg-[#F5F1FF] px-3 py-1.5">
+                <Text className="text-[12px] font-bold leading-[16px] text-primary">
+                  {selectedCategory}
+                </Text>
+              </View>
+            </View>
+
+            {!isSelectedCategoryVoiceSupported ? (
+              <View className="mt-4 rounded-[20px] bg-[#F8F5FF] px-4 py-4">
+                <Text className="text-[13px] font-semibold leading-[18px] text-[#8F92A8]">
+                  This interview type is preview-only right now. Behavioral and
+                  Technical voice practice are fully available.
+                </Text>
+              </View>
+            ) : null}
+
+            {isSelectedCategoryVoiceSupported &&
+            generatedStatus === "loading" ? (
+              <View className="mt-4 min-h-[96px] items-center justify-center rounded-[20px] bg-[#F8F5FF]">
+                <ActivityIndicator color={colors.primary} size="small" />
+                <Text className="mt-2 text-[13px] font-semibold leading-[18px] text-[#8F92A8]">
+                  Generating a role-aware question...
+                </Text>
+              </View>
+            ) : null}
+
+            {isSelectedCategoryVoiceSupported && generatedStatus === "error" ? (
+              <View className="mt-4 rounded-[20px] bg-[#FFF1F1] px-4 py-4">
+                <Text className="text-[13px] font-semibold leading-[18px] text-[#C93A3A]">
+                  {generatedError ??
+                    "CareerFox could not generate a role-aware question right now."}
+                </Text>
+                <Pressable
+                  accessibilityLabel="Retry AI question generation"
+                  accessibilityRole="button"
+                  className="mt-3 self-start rounded-full bg-white px-4 py-2"
+                  onPress={() => void generateRoleAwareQuestion()}
+                >
+                  <Text className="text-[12px] font-bold leading-[16px] text-primary">
+                    Retry
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            {isSelectedCategoryVoiceSupported &&
+            generatedStatus === "success" &&
+            roleAwareQuestion ? (
+              <View className="mt-4 rounded-[20px] bg-[#F8F5FF] px-4 py-4">
+                <Text className="text-[15px] font-bold leading-[21px] text-text-primary">
+                  {roleAwareQuestion.question.question}
+                </Text>
+                <Text className="mt-2 text-[12px] font-semibold leading-[17px] text-[#8F92A8]">
+                  {roleAwareQuestion.question.whyThisQuestionMatters}
+                </Text>
+                <View className="mt-3 flex-row flex-wrap gap-2">
+                  <View className="rounded-full bg-white px-3 py-1.5">
+                    <Text className="text-[11px] font-bold leading-[15px] text-primary">
+                      {roleAwareQuestion.question.expectedStructure}
+                    </Text>
+                  </View>
+                  <View className="rounded-full bg-white px-3 py-1.5">
+                    <Text className="text-[11px] font-bold leading-[15px] text-primary">
+                      {roleAwareQuestion.question.difficulty}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ) : null}
+
+            {isSelectedCategoryVoiceSupported &&
+            generatedStatus === "success" &&
+            !roleAwareQuestion ? (
+              <View className="mt-4 rounded-[20px] bg-[#F8F5FF] px-4 py-4">
+                <Text className="text-[13px] font-semibold leading-[18px] text-[#8F92A8]">
+                  No role-aware question is available for this selection yet.
+                </Text>
+                <Pressable
+                  accessibilityLabel="Generate AI practice question"
+                  accessibilityRole="button"
+                  className="mt-3 self-start rounded-full bg-white px-4 py-2"
+                  onPress={() => void generateRoleAwareQuestion()}
+                >
+                  <Text className="text-[12px] font-bold leading-[16px] text-primary">
+                    Generate
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
+
           <Pressable
             accessibilityLabel="Start mock interview"
             accessibilityRole="button"
             className="overflow-hidden rounded-[22px]"
-            onPress={openBehavioralPractice}
-            style={{ boxShadow: "0 14px 30px rgba(108, 78, 245, 0.22)" }}
+            disabled={!isSelectedCategoryVoiceSupported}
+            onPress={openVoicePractice}
+            style={{
+              boxShadow: "0 14px 30px rgba(108, 78, 245, 0.22)",
+              opacity: isSelectedCategoryVoiceSupported ? 1 : 0.62,
+            }}
           >
             <LinearGradient
               colors={["#7758FF", "#9378FF"]}
@@ -507,7 +739,11 @@ export function InterviewPracticeScreen() {
                   minimumFontScale={0.78}
                   numberOfLines={1}
                 >
-                  Start Mock Interview
+                  {isSelectedCategoryVoiceSupported
+                    ? selectedCategory === "technical"
+                      ? "Start Technical Voice Interview"
+                      : "Start Mock Interview"
+                    : "Behavioral & Technical Available"}
                 </Text>
               </View>
             </LinearGradient>

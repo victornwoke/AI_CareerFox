@@ -7,6 +7,7 @@ export type AiGenerateJsonRequest = {
   prompt: string;
   schema: JsonSchema;
   timeoutMs?: number;
+  inlineFiles?: { data: string; mimeType: string }[];
 };
 
 export type AiProvider = {

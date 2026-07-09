@@ -4,13 +4,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Linking,
-  Pressable,
-  ScrollView,
-  Text,
-  useWindowDimensions,
-  View,
+    ActivityIndicator,
+    Linking,
+    Pressable,
+    ScrollView,
+    Text,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -214,7 +214,9 @@ export default function ProfileScreen() {
   const selectedExperienceLevelId = useCareerStore(
     (state) => state.selectedExperienceLevel,
   );
-  const selectedTargetRoleId = useCareerStore((state) => state.selectedTargetRole);
+  const selectedTargetRoleId = useCareerStore(
+    (state) => state.selectedTargetRole,
+  );
   const setupCompleted = useCareerStore((state) => state.setupCompleted);
   const coins = useProgressStore((state) => state.coins);
   const completedMissionIds = useProgressStore(
@@ -234,8 +236,9 @@ export default function ProfileScreen() {
   );
   const selectedExperienceLevel = useMemo(
     () =>
-      experienceLevels.find((level) => level.id === selectedExperienceLevelId) ??
-      null,
+      experienceLevels.find(
+        (level) => level.id === selectedExperienceLevelId,
+      ) ?? null,
     [selectedExperienceLevelId],
   );
 
@@ -245,25 +248,31 @@ export default function ProfileScreen() {
     user?.username ??
     user?.primaryEmailAddress?.emailAddress.split("@")[0] ??
     "CareerFox learner";
-  const emailAddress = user?.primaryEmailAddress?.emailAddress ?? "No email linked";
+  const emailAddress =
+    user?.primaryEmailAddress?.emailAddress ?? "No email linked";
   const completedMissions = useMemo(
     () =>
       new Set(
-        completedMissionIds.filter((missionId) => careerMissionIds.has(missionId)),
+        completedMissionIds.filter((missionId) =>
+          careerMissionIds.has(missionId),
+        ),
       ).size,
     [completedMissionIds],
   );
   const missionCount = careerMissions.length;
   const missionProgress =
-    missionCount === 0 ? 0 : Math.round((completedMissions / missionCount) * 100);
+    missionCount === 0
+      ? 0
+      : Math.round((completedMissions / missionCount) * 100);
   const earnedBadges = unlockedAchievementIds.length;
   const profileCompleteness =
     (selectedRole ? 34 : 0) +
     (selectedExperienceLevel ? 33 : 0) +
     (setupCompleted ? 33 : 0);
   const nextAchievement =
-    achievements.find((achievement) => !unlockedAchievementIds.includes(achievement.id)) ??
-    achievements[0];
+    achievements.find(
+      (achievement) => !unlockedAchievementIds.includes(achievement.id),
+    ) ?? achievements[0];
 
   const openExternalAction = (url: string) => {
     void Linking.openURL(url).catch(() => undefined);
@@ -410,7 +419,8 @@ export default function ProfileScreen() {
               <View
                 className="h-14 w-14 items-center justify-center rounded-[22px]"
                 style={{
-                  backgroundColor: selectedRole?.iconBackground ?? colors.softPurple,
+                  backgroundColor:
+                    selectedRole?.iconBackground ?? colors.softPurple,
                 }}
               >
                 <SymbolIcon
@@ -472,7 +482,11 @@ export default function ProfileScreen() {
                     className="h-11 w-11 items-center justify-center rounded-[17px]"
                     style={{ backgroundColor: action.background }}
                   >
-                    <SymbolIcon color={action.accent} name={action.icon} size={21} />
+                    <SymbolIcon
+                      color={action.accent}
+                      name={action.icon}
+                      size={21}
+                    />
                   </View>
                   <View className="ml-3 flex-1">
                     <Text className="text-[14px] font-bold leading-[18px] text-text-primary">
@@ -551,7 +565,11 @@ export default function ProfileScreen() {
                     className="h-11 w-11 items-center justify-center rounded-[17px]"
                     style={{ backgroundColor: action.background }}
                   >
-                    <SymbolIcon color={action.accent} name={action.icon} size={21} />
+                    <SymbolIcon
+                      color={action.accent}
+                      name={action.icon}
+                      size={21}
+                    />
                   </View>
                   <View className="ml-3 flex-1">
                     <Text className="text-[14px] font-bold leading-[18px] text-text-primary">

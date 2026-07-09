@@ -3,33 +3,33 @@ import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useMemo } from "react";
 import {
-  Pressable,
-  ScrollView,
-  Text,
-  useWindowDimensions,
-  View,
+    Pressable,
+    ScrollView,
+    Text,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SymbolIcon } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import { images } from "@/constants/images";
-import {
-  getActiveBehavioralLesson,
-  getBehavioralLessons,
-} from "@/lib/interviewLessonFlow";
+import { targetRoles } from "@/data/roles";
 import { trackInterviewPracticeStarted } from "@/lib/analytics";
+import {
+    getEstimatedMinutesForDifficulty,
+    getXpForDifficulty,
+} from "@/lib/interviewGeneratedQuestion";
+import {
+    type BehavioralLesson,
+    getActiveBehavioralLesson,
+    getBehavioralLessons,
+} from "@/lib/interviewLessonFlow";
 import { useCareerStore } from "@/store/useCareerStore";
 import { useInterviewStore } from "@/store/useInterviewStore";
 
 const behavioralHref = "/interview/behavioral" as Href;
 const questionHref = "/interview/question" as Href;
-
-const learningOutcomes = [
-  "Structure answer clearly",
-  "Avoid generic wording",
-  "Practise with AI feedback",
-];
 
 export default function LessonIntroScreen() {
   const router = useRouter();
@@ -42,18 +42,73 @@ export default function LessonIntroScreen() {
   const completedQuestionIds = useInterviewStore(
     (state) => state.completedQuestionIds,
   );
+  const generatedPracticeQuestion = useInterviewStore(
+    (state) => state.generatedPracticeQuestion,
+  );
   const setActiveQuestionId = useInterviewStore(
     (state) => state.setActiveQuestionId,
   );
-  const lessons = useMemo(
-    () => getBehavioralLessons(selectedTargetRoleId),
+  const selectedRoleTitle = useMemo(
+    () =>
+      selectedTargetRoleId
+        ? (targetRoles.find((role) => role.id === selectedTargetRoleId)
+            ?.title ?? "Career")
+        : "Career",
     [selectedTargetRoleId],
   );
+  const lessons = useMemo(() => {
+    const baseLessons = getBehavioralLessons(selectedTargetRoleId);
+
+    if (!generatedPracticeQuestion) {
+      return baseLessons;
+    }
+
+    const generated = generatedPracticeQuestion.question;
+
+    if (generated.category !== "behavioral") {
+      return baseLessons;
+    }
+
+    const generatedLesson: BehavioralLesson = {
+      category: "behavioral",
+      difficulty: generated.difficulty,
+      expectedStructure: generated.expectedStructure,
+      guidance: generated.answerTips,
+      id: generatedPracticeQuestion.id,
+      lessonNumber: 1,
+      question: generated.question,
+      roleId: selectedTargetRoleId ?? "generated",
+      roleTitle: selectedRoleTitle,
+      tags: [
+        generated.expectedStructure,
+        generated.difficulty,
+        `${getEstimatedMinutesForDifficulty(generated.difficulty)} min`,
+      ],
+    };
+
+    return [generatedLesson, ...baseLessons].map((entry, index) => ({
+      ...entry,
+      lessonNumber: index + 1,
+    }));
+  }, [generatedPracticeQuestion, selectedRoleTitle, selectedTargetRoleId]);
   const lesson = getActiveBehavioralLesson({
     activeQuestionId,
     completedQuestionIds,
     lessons,
   });
+  const generatedLessonContext =
+    lesson && generatedPracticeQuestion?.id === lesson.id
+      ? generatedPracticeQuestion.question
+      : null;
+  const lessonMinutes = lesson
+    ? getEstimatedMinutesForDifficulty(lesson.difficulty)
+    : 5;
+  const lessonXp = lesson ? getXpForDifficulty(lesson.difficulty) : 30;
+  const learningOutcomes = generatedLessonContext?.answerTips.slice(0, 3) ?? [
+    "Structure answer clearly",
+    "Avoid generic wording",
+    "Practise with AI feedback",
+  ];
 
   const startLesson = () => {
     if (lesson) {
@@ -176,14 +231,14 @@ export default function LessonIntroScreen() {
                 size={18}
               />
               <Text className="text-[16px] font-semibold leading-[22px] text-white/82">
-                5 min
+                {lessonMinutes} min
               </Text>
             </View>
             <Text className="text-[16px] font-semibold leading-[22px] text-white/82">
               Lesson {lesson.lessonNumber}
             </Text>
             <Text className="text-[16px] font-semibold leading-[22px] text-white/82">
-              +50 XP
+              +{lessonXp} XP
             </Text>
           </View>
         </LinearGradient>
@@ -205,9 +260,8 @@ export default function LessonIntroScreen() {
               minimumFontScale={0.82}
               numberOfLines={4}
             >
-              Build a focused answer for {lesson.roleTitle}. You will turn a
-              real example into a clear {lesson.expectedStructure} story that
-              feels specific, confident, and easy for an interviewer to follow.
+              {generatedLessonContext?.whyThisQuestionMatters ??
+                `Build a focused answer for ${lesson.roleTitle}. You will turn a real example into a clear ${lesson.expectedStructure} story that feels specific, confident, and easy for an interviewer to follow.`}
             </Text>
           </View>
 
@@ -263,7 +317,7 @@ export default function LessonIntroScreen() {
                 Your AI Career Coach
               </Text>
               <Text className="mt-2 text-[14px] font-semibold leading-[19px] text-[#8F92A8]">
-                5 stars  4.9 (2.3k reviews)
+                5 stars 4.9 (2.3k reviews)
               </Text>
             </View>
           </View>

@@ -112,7 +112,10 @@ const buildQuestionBars = ({
         return;
       }
 
-      completionDateByQuestionId.set(item.questionId, getLocalDayKey(practicedAt));
+      completionDateByQuestionId.set(
+        item.questionId,
+        getLocalDayKey(practicedAt),
+      );
     });
 
   completedQuestionIds.forEach((questionId) => {

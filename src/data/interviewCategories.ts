@@ -1,15 +1,16 @@
 import { colors } from "@/constants/colors";
 import type {
-  InterviewCategory,
-  InterviewQuestionBankCount,
-  LearningCategory,
+    InterviewCategory,
+    InterviewQuestionBankCount,
+    LearningCategory,
 } from "@/types/career";
 
 export const interviewCategories: InterviewCategory[] = [
   {
     id: "behavioral",
     title: "Behavioral Interviews",
-    description: "Questions about past experience, teamwork, conflict, ownership, learning, and communication.",
+    description:
+      "Questions about past experience, teamwork, conflict, ownership, learning, and communication.",
     icon: "person.crop.circle.fill",
     iconBackground: colors.softSuccess,
     iconColor: colors.success,
@@ -17,7 +18,8 @@ export const interviewCategories: InterviewCategory[] = [
   {
     id: "technical",
     title: "Technical Interviews",
-    description: "Role-specific questions that test practical skills, tools, concepts, and tradeoffs.",
+    description:
+      "Role-specific questions that test practical skills, tools, concepts, and tradeoffs.",
     icon: "chevron.left.forwardslash.chevron.right",
     iconBackground: colors.mutedPurple,
     iconColor: colors.primary,
@@ -25,7 +27,8 @@ export const interviewCategories: InterviewCategory[] = [
   {
     id: "case",
     title: "Case Interviews",
-    description: "Scenario questions that test structured thinking, prioritization, and problem solving.",
+    description:
+      "Scenario questions that test structured thinking, prioritization, and problem solving.",
     icon: "chart.bar.xaxis",
     iconBackground: colors.softEnergy,
     iconColor: colors.energy,
@@ -33,7 +36,8 @@ export const interviewCategories: InterviewCategory[] = [
   {
     id: "hr",
     title: "HR / Hiring Manager Interviews",
-    description: "Motivation, expectations, work style, values, salary framing, and role fit.",
+    description:
+      "Motivation, expectations, work style, values, salary framing, and role fit.",
     icon: "person",
     iconBackground: colors.softBlue,
     iconColor: colors.blue,
@@ -41,11 +45,7 @@ export const interviewCategories: InterviewCategory[] = [
 ];
 
 const requiredInterviewCategories = interviewCategories.filter(
-  (category) =>
-    category.id === "behavioral" ||
-    category.id === "hr" ||
-    category.id === "technical" ||
-    category.id === "case",
+  (category) => category.id === "behavioral" || category.id === "technical",
 );
 
 export const interviewQuestionBankCounts: Record<
@@ -103,7 +103,8 @@ export const learningCategories: LearningCategory[] = [
   {
     id: "interview-practice",
     title: "Interview Practice",
-    description: "Mock questions, answer drills, and confidence-building sessions.",
+    description:
+      "Mock questions, answer drills, and confidence-building sessions.",
     icon: "mic.fill",
     iconBackground: colors.softSuccess,
     iconColor: colors.success,
@@ -130,7 +131,8 @@ export const learningCategories: LearningCategory[] = [
   {
     id: "career-guidance",
     title: "Career Guidance",
-    description: "Clarify goals, next steps, positioning, and career direction.",
+    description:
+      "Clarify goals, next steps, positioning, and career direction.",
     icon: "target",
     iconBackground: colors.softEnergy,
     iconColor: colors.energy,
@@ -139,7 +141,8 @@ export const learningCategories: LearningCategory[] = [
   {
     id: "job-search",
     title: "Job Search",
-    description: "Plan applications, follow-ups, outreach, and weekly momentum.",
+    description:
+      "Plan applications, follow-ups, outreach, and weekly momentum.",
     icon: "briefcase.fill",
     iconBackground: colors.softAccent,
     iconColor: colors.accent,

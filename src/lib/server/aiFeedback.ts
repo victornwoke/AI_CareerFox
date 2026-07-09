@@ -1,15 +1,18 @@
+import { AiProviderError, getAiProvider } from "@/lib/ai/aiProvider";
 import {
-  AiProviderError,
-  getAiProvider,
-} from "@/lib/ai/aiProvider";
-import { careerCoachRules, formatAiContext } from "@/lib/ai/prompts";
+    careerCoachRules,
+    cvCoachRules,
+    formatAiContext,
+} from "@/lib/ai/prompts";
 import type { JsonSchema } from "@/lib/ai/schemas";
 import {
-  AI_TEXT_LIMITS,
-  type AiPracticeMode,
-  validateAiPracticeMode,
-  validateBasicAiRequestQuota as checkBasicAiRequestQuota,
+    AI_TEXT_LIMITS,
+    type AiPracticeMode,
+    validateBasicAiRequestQuota as checkBasicAiRequestQuota,
+    validateAiPracticeMode,
 } from "@/lib/ai/validators";
+import { Buffer } from "node:buffer";
+import { inflateSync } from "node:zlib";
 
 type InterviewCategory = "behavioral" | "technical" | "case" | "hr";
 type LearningCategoryDestination =
@@ -55,13 +58,25 @@ export type InterviewFeedbackOutput = {
 };
 
 export type CvFeedbackInput = {
-  cvText: string;
+  cvFile?: UploadedFileInput;
+  cvText?: string;
   experienceLevel?: string;
+  jobDescriptionFile?: UploadedFileInput;
   jobDescription?: string;
   practiceMode?: AiPracticeMode;
   selectedCareerPath?: string;
   targetRole: string;
   userId: string;
+};
+
+type ResolvedCvFeedbackInput = CvFeedbackInput & {
+  cvText: string;
+};
+
+type UploadedFileInput = {
+  base64: string;
+  mimeType?: string;
+  name: string;
 };
 
 export type CvFeedbackOutput = {
@@ -71,10 +86,20 @@ export type CvFeedbackOutput = {
   improvedBullets: string[];
   keywordGaps: string[];
   nextActions: string[];
+  categories: {
+    clarity: number;
+    impact: number;
+    relevance: number;
+    atsReadability: number;
+    roleAlignment: number;
+  };
+  /** True when the result was produced by the local offline fallback rather than the AI provider. */
+  isAiFallback?: true;
 };
 
 export type GeneratePracticeQuestionInput = {
   category: InterviewCategory;
+  difficulty?: PracticeQuestionDifficulty;
   experienceLevel: string;
   jobDescription?: string;
   practiceMode?: AiPracticeMode;
@@ -85,11 +110,12 @@ export type GeneratePracticeQuestionInput = {
 };
 
 export type GeneratePracticeQuestionOutput = {
-  question: string;
+  answerTips: string[];
   category: InterviewCategory;
   difficulty: PracticeQuestionDifficulty;
   expectedStructure: PracticeQuestionStructure;
-  guidance: string[];
+  question: string;
+  whyThisQuestionMatters: string;
 };
 
 export type GenerateInterviewQuestionsInput = GeneratePracticeQuestionInput & {
@@ -121,6 +147,36 @@ export type GeneratedLearningCategory = {
 
 export type GenerateLearningCategoriesOutput = {
   categories: GeneratedLearningCategory[];
+};
+
+export type RoleLearningModuleType =
+  | "learn"
+  | "practice"
+  | "mock_interview"
+  | "cv";
+
+export type RoleLearningPlanModule = {
+  description: string;
+  estimatedMinutes: number;
+  id: string;
+  title: string;
+  type: RoleLearningModuleType;
+  xp: number;
+};
+
+export type GenerateRoleLearningPlanInput = {
+  experienceLevel: string;
+  jobDescription?: string;
+  practiceMode?: AiPracticeMode;
+  selectedCareerPath?: string;
+  targetRole: string;
+  userId: string;
+};
+
+export type GenerateRoleLearningPlanOutput = {
+  modules: RoleLearningPlanModule[];
+  summary: string;
+  title: string;
 };
 
 export type GenerateLessonInput = {
@@ -157,7 +213,7 @@ type ApiValidationResult<T> =
       ok: false;
     };
 
-const maxRequestBytes = 45_000;
+const maxRequestBytes = 8_000_000;
 const maxUserIdLength = 120;
 const maxTargetRoleLength = 120;
 const maxExperienceLevelLength = 80;
@@ -165,6 +221,8 @@ const maxQuestionLength = 800;
 const maxAnswerLength = AI_TEXT_LIMITS.answer;
 const maxCvTextLength = AI_TEXT_LIMITS.cvText;
 const maxJobDescriptionLength = AI_TEXT_LIMITS.jobDescription;
+const maxFileNameLength = 260;
+const maxMimeTypeLength = 120;
 const maxCategoryTitleLength = 120;
 const maxCurrentCategoryLength = 120;
 const maxCurrentCategories = 12;
@@ -206,6 +264,13 @@ const practiceQuestionStructures: readonly PracticeQuestionStructure[] = [
   "STAR",
   "XYZ",
   "freeform",
+];
+
+const roleLearningModuleTypes: readonly RoleLearningModuleType[] = [
+  "learn",
+  "practice",
+  "mock_interview",
+  "cv",
 ];
 
 const interviewFeedbackSchema: JsonSchema = {
@@ -284,12 +349,14 @@ const cvFeedbackSchema: JsonSchema = {
       type: "string",
     },
     weakBullets: {
-      description: "Up to three weak or generic CV bullets copied only when short.",
+      description:
+        "Up to three weak or generic CV bullets copied only when short.",
       items: { type: "string" },
       type: "array",
     },
     improvedBullets: {
-      description: "Sharper replacement bullets with action, scope, and measurable impact.",
+      description:
+        "Sharper replacement bullets with action, scope, and measurable impact.",
       items: { type: "string" },
       type: "array",
     },
@@ -303,6 +370,54 @@ const cvFeedbackSchema: JsonSchema = {
       items: { type: "string" },
       type: "array",
     },
+    categories: {
+      additionalProperties: false,
+      description: "Five CV quality sub-scores from 0 to 100.",
+      properties: {
+        clarity: {
+          description:
+            "How clearly the CV communicates experience and outcomes.",
+          maximum: 100,
+          minimum: 0,
+          type: "integer",
+        },
+        impact: {
+          description: "Strength of measurable impact and results shown.",
+          maximum: 100,
+          minimum: 0,
+          type: "integer",
+        },
+        relevance: {
+          description:
+            "Match between the CV and the target role or job description.",
+          maximum: 100,
+          minimum: 0,
+          type: "integer",
+        },
+        atsReadability: {
+          description:
+            "How well the CV parses and reads for applicant tracking systems.",
+          maximum: 100,
+          minimum: 0,
+          type: "integer",
+        },
+        roleAlignment: {
+          description:
+            "How strongly the CV aligns with the chosen target role.",
+          maximum: 100,
+          minimum: 0,
+          type: "integer",
+        },
+      },
+      required: [
+        "clarity",
+        "impact",
+        "relevance",
+        "atsReadability",
+        "roleAlignment",
+      ],
+      type: "object",
+    },
   },
   required: [
     "score",
@@ -311,6 +426,7 @@ const cvFeedbackSchema: JsonSchema = {
     "improvedBullets",
     "keywordGaps",
     "nextActions",
+    "categories",
   ],
   type: "object",
 };
@@ -334,8 +450,14 @@ const practiceQuestionSchema: JsonSchema = {
       enum: ["STAR", "XYZ", "freeform"],
       type: "string",
     },
-    guidance: {
-      description: "Three short coaching prompts for answering well.",
+    whyThisQuestionMatters: {
+      description:
+        "One sentence on why this question helps the candidate prepare.",
+      type: "string",
+    },
+    answerTips: {
+      description:
+        "Exactly three short, practical tips for answering the question well.",
       items: { type: "string" },
       type: "array",
     },
@@ -345,7 +467,8 @@ const practiceQuestionSchema: JsonSchema = {
     "category",
     "difficulty",
     "expectedStructure",
-    "guidance",
+    "whyThisQuestionMatters",
+    "answerTips",
   ],
   type: "object",
 };
@@ -415,6 +538,69 @@ const learningCategoriesSchema: JsonSchema = {
   type: "object",
 };
 
+const roleLearningPlanSchema: JsonSchema = {
+  additionalProperties: false,
+  properties: {
+    title: {
+      description: "A concise title for the role learning plan.",
+      type: "string",
+    },
+    summary: {
+      description: "A short, practical one or two sentence plan summary.",
+      type: "string",
+    },
+    modules: {
+      description: "A short, practical list of 4 to 6 learning modules.",
+      items: {
+        additionalProperties: false,
+        properties: {
+          id: {
+            description: "A short kebab-case module identifier.",
+            type: "string",
+          },
+          title: {
+            description: "A concise module title.",
+            type: "string",
+          },
+          description: {
+            description: "A practical one-sentence module description.",
+            type: "string",
+          },
+          estimatedMinutes: {
+            description: "Estimated minutes to complete, from 3 to 60.",
+            maximum: 60,
+            minimum: 3,
+            type: "integer",
+          },
+          xp: {
+            description: "XP reward for completing the module, from 10 to 100.",
+            maximum: 100,
+            minimum: 10,
+            type: "integer",
+          },
+          type: {
+            description: "The module type.",
+            enum: ["learn", "practice", "mock_interview", "cv"],
+            type: "string",
+          },
+        },
+        required: [
+          "id",
+          "title",
+          "description",
+          "estimatedMinutes",
+          "xp",
+          "type",
+        ],
+        type: "object",
+      },
+      type: "array",
+    },
+  },
+  required: ["title", "summary", "modules"],
+  type: "object",
+};
+
 const lessonSchema: JsonSchema = {
   additionalProperties: false,
   properties: {
@@ -464,20 +650,27 @@ const lessonSchema: JsonSchema = {
 };
 
 export function jsonResponse(body: unknown, init?: ResponseInit) {
-  return Response.json(body, {
+  return new Response(JSON.stringify(body), {
     ...init,
     headers: {
       "Cache-Control": "no-store",
+      "Content-Type": "application/json",
       ...init?.headers,
     },
   });
 }
 
-export function validateRequestSize(request: Request): ApiValidationResult<null> {
+export function validateRequestSize(
+  request: Request,
+): ApiValidationResult<null> {
   const contentLength = request.headers.get("content-length");
   const byteLength = contentLength ? Number(contentLength) : null;
 
-  if (byteLength !== null && Number.isFinite(byteLength) && byteLength > maxRequestBytes) {
+  if (
+    byteLength !== null &&
+    Number.isFinite(byteLength) &&
+    byteLength > maxRequestBytes
+  ) {
     return {
       error: "Request body is too large.",
       ok: false,
@@ -487,7 +680,9 @@ export function validateRequestSize(request: Request): ApiValidationResult<null>
   return { data: null, ok: true };
 }
 
-export async function readJsonBody(request: Request): Promise<ApiValidationResult<unknown>> {
+export async function readJsonBody(
+  request: Request,
+): Promise<ApiValidationResult<unknown>> {
   try {
     return {
       data: await request.json(),
@@ -511,7 +706,11 @@ export function validateInterviewFeedbackInput(
   }
 
   const userId = getRequiredString(record, "userId", maxUserIdLength);
-  const targetRole = getRequiredString(record, "targetRole", maxTargetRoleLength);
+  const targetRole = getRequiredString(
+    record,
+    "targetRole",
+    maxTargetRoleLength,
+  );
   const experienceLevel = getRequiredString(
     record,
     "experienceLevel",
@@ -568,13 +767,18 @@ export function validateCvFeedbackInput(
   }
 
   const userId = getRequiredString(record, "userId", maxUserIdLength);
-  const targetRole = getRequiredString(record, "targetRole", maxTargetRoleLength);
+  const targetRole = getRequiredString(
+    record,
+    "targetRole",
+    maxTargetRoleLength,
+  );
   const experienceLevel = getOptionalString(
     record,
     "experienceLevel",
     maxExperienceLevelLength,
   );
-  const cvText = getRequiredString(record, "cvText", maxCvTextLength);
+  const cvText = getOptionalTrimmedString(record, "cvText", maxCvTextLength);
+  const cvFile = validateUploadedFile(record.cvFile, "cvFile");
   const selectedCareerPath = getOptionalString(
     record,
     "selectedCareerPath",
@@ -585,20 +789,32 @@ export function validateCvFeedbackInput(
     "jobDescription",
     maxJobDescriptionLength,
   );
+  const jobDescriptionFile = validateUploadedFile(
+    record.jobDescriptionFile,
+    "jobDescriptionFile",
+  );
   const practiceMode = validateAiPracticeMode(record.practiceMode);
 
   if (!userId.ok) return userId;
   if (!targetRole.ok) return targetRole;
   if (!experienceLevel.ok) return experienceLevel;
   if (!cvText.ok) return cvText;
+  if (!cvFile.ok) return cvFile;
   if (!selectedCareerPath.ok) return selectedCareerPath;
   if (!jobDescription.ok) return jobDescription;
+  if (!jobDescriptionFile.ok) return jobDescriptionFile;
   if (!practiceMode.ok) return practiceMode;
+
+  if (!cvText.data && !cvFile.data) {
+    return invalid("cvText or cvFile is required.");
+  }
 
   return {
     data: {
+      cvFile: cvFile.data,
       cvText: cvText.data,
       experienceLevel: experienceLevel.data,
+      jobDescriptionFile: jobDescriptionFile.data,
       jobDescription: jobDescription.data,
       practiceMode: practiceMode.data,
       selectedCareerPath: selectedCareerPath.data,
@@ -606,6 +822,32 @@ export function validateCvFeedbackInput(
       userId: userId.data,
     },
     ok: true,
+  };
+}
+
+function validateDifficulty(
+  value: unknown,
+): ApiValidationResult<PracticeQuestionDifficulty | undefined> {
+  if (value === undefined) {
+    return {
+      data: undefined,
+      ok: true,
+    };
+  }
+
+  if (
+    typeof value === "string" &&
+    practiceQuestionDifficulties.includes(value as PracticeQuestionDifficulty)
+  ) {
+    return {
+      data: value as PracticeQuestionDifficulty,
+      ok: true,
+    };
+  }
+
+  return {
+    error: "difficulty must be beginner, intermediate, or advanced.",
+    ok: false,
   };
 }
 
@@ -619,13 +861,18 @@ export function validateGeneratePracticeQuestionInput(
   }
 
   const userId = getRequiredString(record, "userId", maxUserIdLength);
-  const targetRole = getRequiredString(record, "targetRole", maxTargetRoleLength);
+  const targetRole = getRequiredString(
+    record,
+    "targetRole",
+    maxTargetRoleLength,
+  );
   const experienceLevel = getRequiredString(
     record,
     "experienceLevel",
     maxExperienceLevelLength,
   );
   const category = getCategory(record.category);
+  const difficulty = validateDifficulty(record.difficulty);
   const selectedCareerPath = getOptionalString(
     record,
     "selectedCareerPath",
@@ -647,6 +894,7 @@ export function validateGeneratePracticeQuestionInput(
   if (!targetRole.ok) return targetRole;
   if (!experienceLevel.ok) return experienceLevel;
   if (!category.ok) return category;
+  if (!difficulty.ok) return difficulty;
   if (!selectedCareerPath.ok) return selectedCareerPath;
   if (!jobDescription.ok) return jobDescription;
   if (!practiceMode.ok) return practiceMode;
@@ -655,10 +903,63 @@ export function validateGeneratePracticeQuestionInput(
   return {
     data: {
       category: category.data,
+      difficulty: difficulty.data,
       experienceLevel: experienceLevel.data,
       jobDescription: jobDescription.data,
       practiceMode: practiceMode.data,
       previousQuestions: previousQuestions.data,
+      selectedCareerPath: selectedCareerPath.data,
+      targetRole: targetRole.data,
+      userId: userId.data,
+    },
+    ok: true,
+  };
+}
+
+export function validateGenerateRoleLearningPlanInput(
+  body: unknown,
+): ApiValidationResult<GenerateRoleLearningPlanInput> {
+  const record = asRecord(body);
+
+  if (!record) {
+    return invalid("Request body must be a JSON object.");
+  }
+
+  const userId = getRequiredString(record, "userId", maxUserIdLength);
+  const targetRole = getRequiredString(
+    record,
+    "targetRole",
+    maxTargetRoleLength,
+  );
+  const experienceLevel = getRequiredString(
+    record,
+    "experienceLevel",
+    maxExperienceLevelLength,
+  );
+  const selectedCareerPath = getOptionalString(
+    record,
+    "selectedCareerPath",
+    maxSelectedCareerPathLength,
+  );
+  const jobDescription = getOptionalString(
+    record,
+    "jobDescription",
+    maxJobDescriptionLength,
+  );
+  const practiceMode = validateAiPracticeMode(record.practiceMode);
+
+  if (!userId.ok) return userId;
+  if (!targetRole.ok) return targetRole;
+  if (!experienceLevel.ok) return experienceLevel;
+  if (!selectedCareerPath.ok) return selectedCareerPath;
+  if (!jobDescription.ok) return jobDescription;
+  if (!practiceMode.ok) return practiceMode;
+
+  return {
+    data: {
+      experienceLevel: experienceLevel.data,
+      jobDescription: jobDescription.data,
+      practiceMode: practiceMode.data,
       selectedCareerPath: selectedCareerPath.data,
       targetRole: targetRole.data,
       userId: userId.data,
@@ -677,7 +978,12 @@ export function validateGenerateInterviewQuestionsInput(
   }
 
   const record = asRecord(body);
-  const count = getOptionalInteger(record?.count, "count", 1, maxGeneratedQuestions);
+  const count = getOptionalInteger(
+    record?.count,
+    "count",
+    1,
+    maxGeneratedQuestions,
+  );
 
   if (!count.ok) {
     return count;
@@ -702,7 +1008,11 @@ export function validateGenerateLearningCategoriesInput(
   }
 
   const userId = getRequiredString(record, "userId", maxUserIdLength);
-  const targetRole = getRequiredString(record, "targetRole", maxTargetRoleLength);
+  const targetRole = getRequiredString(
+    record,
+    "targetRole",
+    maxTargetRoleLength,
+  );
   const experienceLevel = getRequiredString(
     record,
     "experienceLevel",
@@ -758,7 +1068,11 @@ export function validateGenerateLessonInput(
   }
 
   const userId = getRequiredString(record, "userId", maxUserIdLength);
-  const targetRole = getRequiredString(record, "targetRole", maxTargetRoleLength);
+  const targetRole = getRequiredString(
+    record,
+    "targetRole",
+    maxTargetRoleLength,
+  );
   const experienceLevel = getRequiredString(
     record,
     "experienceLevel",
@@ -837,30 +1151,147 @@ export async function createInterviewFeedback(
     "Make nextPracticeSuggestion one specific drill.",
   ].join("\n");
 
-  const response = await fetchGeminiStructuredJson(prompt, interviewFeedbackSchema);
+  try {
+    const response = await fetchGeminiStructuredJson(
+      prompt,
+      interviewFeedbackSchema,
+    );
 
-  return normalizeInterviewFeedback(response);
+    return normalizeInterviewFeedback(response);
+  } catch (error) {
+    if (shouldUseLocalAiFallback(error)) {
+      return createLocalInterviewFeedback(input);
+    }
+
+    throw error;
+  }
 }
 
 export async function createCvFeedback(
   input: CvFeedbackInput,
 ): Promise<CvFeedbackOutput> {
+  const resolvedCvText = input.cvText?.trim()
+    ? input.cvText.trim()
+    : input.cvFile
+      ? await extractTextFromUploadedFile(input.cvFile)
+      : null;
+
+  // When text extraction fails but we have the raw file, send it directly
+  // to Gemini as inline data — Gemini reads PDFs and DOCX natively.
+  const cvInlineFile: { data: string; mimeType: string } | null =
+    !resolvedCvText && input.cvFile
+      ? {
+          data: input.cvFile.base64.replace(/^data:[^;]+;base64,/, ""),
+          mimeType: input.cvFile.mimeType ?? "application/pdf",
+        }
+      : null;
+
+  if (!resolvedCvText) {
+    if (!input.cvFile) {
+      throw new PublicApiError(
+        "Please upload your CV so CareerFox can review it.",
+        422,
+      );
+    }
+  }
+
+  const resolvedJobDescription = input.jobDescription?.trim()
+    ? input.jobDescription.trim()
+    : input.jobDescriptionFile
+      ? await extractTextFromUploadedFile(input.jobDescriptionFile)
+      : undefined;
+
+  const jdInlineFile: { data: string; mimeType: string } | null =
+    !resolvedJobDescription && input.jobDescriptionFile
+      ? {
+          data: input.jobDescriptionFile.base64.replace(
+            /^data:[^;]+;base64,/,
+            "",
+          ),
+          mimeType: input.jobDescriptionFile.mimeType ?? "application/pdf",
+        }
+      : null;
+
+  const inlineFiles = [cvInlineFile, jdInlineFile].filter(
+    (file): file is { data: string; mimeType: string } => file !== null,
+  );
+
+  const resolvedInput: ResolvedCvFeedbackInput = {
+    ...input,
+    cvText: resolvedCvText ?? "(CV provided as an attached document)",
+    jobDescription: resolvedJobDescription ?? undefined,
+  };
+
+  const cvSection = resolvedCvText
+    ? `CV text:\n${resolvedCvText}`
+    : "CV: read directly from the attached document.";
+
+  const jdInlineNote =
+    !resolvedJobDescription && input.jobDescriptionFile
+      ? "Job description: read directly from the second attached document."
+      : "";
+
   const prompt = [
     "You are CareerFox AI, a premium career coach for CV improvement.",
     "",
     "Rules:",
-    `${careerCoachRules}`,
+    `${cvCoachRules}`,
     "",
     "Review this CV for the target role.",
-    formatAiContext(input),
-    `CV text: ${input.cvText}`,
+    formatAiContext(resolvedInput),
+    cvSection,
+    jdInlineNote,
     "",
     "Return concise JSON only. Focus on honest keyword gaps, weak bullets, stronger replacements, and next actions.",
-  ].join("\n");
+    "Score five sub-categories from 0 to 100: clarity, impact, relevance, atsReadability, roleAlignment.",
+    "Never invent companies, metrics, tools, dates, or responsibilities. Mark suggested metrics as placeholders.",
+    "Improve weak bullets using XYZ style and stronger action verbs where honest.",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
-  const response = await fetchGeminiStructuredJson(prompt, cvFeedbackSchema);
+  try {
+    const response = await fetchGeminiStructuredJson(
+      prompt,
+      cvFeedbackSchema,
+      inlineFiles.length > 0 ? inlineFiles : undefined,
+    );
 
-  return normalizeCvFeedback(response);
+    return normalizeCvFeedback(response);
+  } catch (error) {
+    let finalError: unknown = error;
+
+    // If the optional JD inline file appears to be causing provider issues,
+    // retry once with CV-only context so analysis still succeeds.
+    if (jdInlineFile) {
+      try {
+        const retryInlineFiles = cvInlineFile ? [cvInlineFile] : undefined;
+        const retryResponse = await fetchGeminiStructuredJson(
+          prompt,
+          cvFeedbackSchema,
+          retryInlineFiles,
+        );
+
+        return normalizeCvFeedback(retryResponse);
+      } catch (retryError) {
+        finalError = retryError;
+      }
+    }
+
+    // For rate limit (429), allow fallback even for uploads since it's temporary.
+    // For other errors (502/504), only allow fallback for text-based CVs.
+    if (shouldUseLocalAiFallback(finalError)) {
+      // 429 is temporary; safe to use local fallback for any CV.
+      // 502/504 are server errors; for uploads, we don't have the full document text,
+      // so fake analysis is worse than an error.
+      const status = (finalError as { status?: number }).status;
+      if (status === 429 || inlineFiles.length === 0) {
+        return createLocalCvFeedback(resolvedInput);
+      }
+    }
+
+    throw finalError;
+  }
 }
 
 export async function createPracticeQuestion(
@@ -878,16 +1309,33 @@ export async function createPracticeQuestion(
     "",
     "Generate one original interview practice question.",
     formatAiContext(input),
+    input.difficulty ? `Preferred difficulty: ${input.difficulty}.` : "",
     `Question category: ${input.category}`,
     "Avoid repeating these previous questions:",
     previousQuestions,
     "",
-    "Return concise JSON only. Guidance should contain exactly three short prompts.",
+    "The question must be realistic for the selected role and level.",
+    "If a job description is supplied, base the question on its responsibilities, skills, and requirements.",
+    "Do not invent company-specific facts.",
+    "Return concise JSON only.",
+    "Include whyThisQuestionMatters: one sentence on why this question helps the candidate prepare.",
+    "Include answerTips: exactly three short, practical tips for answering the question well.",
   ].join("\n");
 
-  const response = await fetchGeminiStructuredJson(prompt, practiceQuestionSchema);
+  try {
+    const response = await fetchGeminiStructuredJson(
+      prompt,
+      practiceQuestionSchema,
+    );
 
-  return normalizePracticeQuestion(response, input.category);
+    return normalizePracticeQuestion(response, input.category);
+  } catch (error) {
+    if (shouldUseLocalAiFallback(error)) {
+      return createLocalPracticeQuestion(input);
+    }
+
+    throw error;
+  }
 }
 
 export async function createInterviewQuestions(
@@ -910,12 +1358,23 @@ export async function createInterviewQuestions(
     "Avoid repeating these previous questions:",
     previousQuestions,
     "",
-    "Return concise JSON only. Each question needs exactly three guidance prompts.",
+    "Return concise JSON only. Each question needs exactly three answerTips and a one-sentence whyThisQuestionMatters.",
   ].join("\n");
 
-  const response = await fetchGeminiStructuredJson(prompt, interviewQuestionsSchema);
+  try {
+    const response = await fetchGeminiStructuredJson(
+      prompt,
+      interviewQuestionsSchema,
+    );
 
-  return normalizeInterviewQuestions(response, input.category, count);
+    return normalizeInterviewQuestions(response, input.category, count);
+  } catch (error) {
+    if (shouldUseLocalAiFallback(error)) {
+      return createLocalInterviewQuestions(input, count);
+    }
+
+    throw error;
+  }
 }
 
 export async function createLearningCategories(
@@ -939,9 +1398,52 @@ export async function createLearningCategories(
     "Return concise JSON only. Cover interview practice, CV improvement, job search, skills, and career guidance where useful. Do not create more than eight categories.",
   ].join("\n");
 
-  const response = await fetchGeminiStructuredJson(prompt, learningCategoriesSchema);
+  try {
+    const response = await fetchGeminiStructuredJson(
+      prompt,
+      learningCategoriesSchema,
+    );
 
-  return normalizeLearningCategories(response);
+    return normalizeLearningCategories(response);
+  } catch (error) {
+    if (shouldUseLocalAiFallback(error)) {
+      return createLocalLearningCategories(input);
+    }
+
+    throw error;
+  }
+}
+
+export async function createRoleLearningPlan(
+  input: GenerateRoleLearningPlanInput,
+): Promise<GenerateRoleLearningPlanOutput> {
+  const prompt = [
+    "You are CareerFox AI, designing a short, practical role learning plan.",
+    "",
+    "Rules:",
+    `${careerCoachRules}`,
+    "",
+    "Create a concise learning plan for the selected target role and experience level.",
+    formatAiContext(input),
+    "Keep the plan short and practical. Do not create a massive curriculum.",
+    "Return concise JSON only with 4 to 6 modules covering learn, practice, mock interview, and cv where relevant.",
+    "Each module needs id (kebab-case), title, description, estimatedMinutes (3 to 60), xp (10 to 100), and type (learn, practice, mock_interview, or cv).",
+  ].join("\n");
+
+  try {
+    const response = await fetchGeminiStructuredJson(
+      prompt,
+      roleLearningPlanSchema,
+    );
+
+    return normalizeRoleLearningPlan(response);
+  } catch (error) {
+    if (shouldUseLocalAiFallback(error)) {
+      return createLocalRoleLearningPlan(input);
+    }
+
+    throw error;
+  }
 }
 
 export async function createLesson(
@@ -964,9 +1466,324 @@ export async function createLesson(
     "Return concise JSON only. Make the lesson practical enough that a user can complete it immediately.",
   ].join("\n");
 
-  const response = await fetchGeminiStructuredJson(prompt, lessonSchema);
+  try {
+    const response = await fetchGeminiStructuredJson(prompt, lessonSchema);
 
-  return normalizeLesson(response);
+    return normalizeLesson(response);
+  } catch (error) {
+    if (shouldUseLocalAiFallback(error)) {
+      return createLocalLesson(input);
+    }
+
+    throw error;
+  }
+}
+
+function shouldUseLocalAiFallback(error: unknown): boolean {
+  return (
+    error instanceof AiProviderError &&
+    (error.status === 429 || error.status === 502 || error.status === 504)
+  );
+}
+
+function clampScore(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function pickKeywords(targetRole: string, jobDescription?: string): string[] {
+  const stopWords = new Set([
+    "and",
+    "the",
+    "for",
+    "with",
+    "your",
+    "from",
+    "that",
+    "this",
+    "into",
+    "role",
+    "experience",
+    "level",
+    "skills",
+  ]);
+
+  const source = `${targetRole} ${jobDescription ?? ""}`.toLowerCase();
+  const tokens = source.match(/[a-z][a-z0-9+-]{2,}/g) ?? [];
+  const unique: string[] = [];
+
+  for (const token of tokens) {
+    if (stopWords.has(token)) {
+      continue;
+    }
+
+    if (!unique.includes(token)) {
+      unique.push(token);
+    }
+  }
+
+  if (unique.length > 0) {
+    return unique.slice(0, 6);
+  }
+
+  return [
+    "stakeholder communication",
+    "measurable impact",
+    "prioritization",
+    "execution",
+  ];
+}
+
+function splitCvBullets(cvText: string): string[] {
+  const candidates = cvText
+    .split(/\r?\n|[.!?]\s+/)
+    .map((line) => line.trim())
+    .filter((line) => line.length >= 20);
+
+  if (candidates.length > 0) {
+    return candidates;
+  }
+
+  return [cvText.trim()].filter((line) => line.length > 0);
+}
+
+function createLocalInterviewFeedback(
+  input: InterviewFeedbackInput,
+): InterviewFeedbackOutput {
+  const answerLength = input.answer.trim().length;
+  const baseScore = answerLength > 420 ? 78 : answerLength > 220 ? 70 : 60;
+  const relevanceBoost = input.jobDescription ? 6 : 2;
+  const score = clampScore(baseScore + relevanceBoost);
+
+  return {
+    categories: {
+      clarity: clampScore(score - 2),
+      confidence: clampScore(score - 4),
+      relevance: clampScore(score + 1),
+      starQuality: clampScore(
+        input.category === "behavioral" ? score : score - 5,
+      ),
+      structure: clampScore(score - 1),
+    },
+    improvedAnswer:
+      "Situation: Define the context in one sentence. Task: State the goal and constraint. Action: Explain two concrete decisions you made. Result: Quantify the impact with one real metric or clear outcome.",
+    improvements: [
+      "Open with a one-line summary before details so the interviewer immediately understands your point.",
+      "Add one concrete metric or business outcome to prove impact.",
+    ],
+    nextPracticeSuggestion:
+      "Rehearse a 60-second STAR answer for this question and tighten each section to one sentence.",
+    score,
+    strengths: [
+      `Your answer shows relevant experience for ${input.targetRole}.`,
+      "You provide useful context instead of only listing actions.",
+    ],
+    summary:
+      "Strong foundation with clear role alignment; add sharper structure and quantified impact for a stronger interview response.",
+  };
+}
+
+function createLocalCvFeedback(
+  input: ResolvedCvFeedbackInput,
+): CvFeedbackOutput {
+  const bullets = splitCvBullets(input.cvText);
+  const weakBullets = bullets.slice(0, 3);
+  const scoreBase =
+    input.cvText.length > 900 ? 76 : input.cvText.length > 350 ? 68 : 58;
+  const score = clampScore(scoreBase + (input.jobDescription ? 4 : 0));
+  const keywordGaps = pickKeywords(input.targetRole, input.jobDescription);
+
+  return {
+    categories: {
+      atsReadability: clampScore(score - 3),
+      clarity: clampScore(score + 1),
+      impact: clampScore(score - 4),
+      relevance: clampScore(score + (input.jobDescription ? 2 : -1)),
+      roleAlignment: clampScore(score),
+    },
+    improvedBullets: weakBullets.map(
+      (bullet) =>
+        `Refine: ${bullet} — include your ownership, scope, and one measurable outcome (add a real metric if accurate).`,
+    ),
+    isAiFallback: true as const,
+    keywordGaps,
+    nextActions: [
+      "Rewrite your top three bullets with action + scope + measurable result.",
+      "Mirror role-relevant keywords in summary and skills only where accurate.",
+      "Move your strongest role-matching achievement into the first third of the CV.",
+    ],
+    score,
+    summary:
+      "Your CV has a good base. Improve measurable impact and role-specific phrasing to increase clarity and ATS relevance.",
+    weakBullets,
+  };
+}
+
+function createLocalPracticeQuestion(
+  input: GeneratePracticeQuestionInput,
+): GeneratePracticeQuestionOutput {
+  const difficulty = input.difficulty ?? "intermediate";
+
+  const questionByCategory: Record<InterviewCategory, string> = {
+    behavioral: `Tell me about a time you influenced a difficult decision as a ${input.targetRole}.`,
+    case: `How would you break down a complex problem in your first 30 days as a ${input.targetRole}?`,
+    hr: `Why are you targeting ${input.targetRole}, and what value would you bring in the first 90 days?`,
+    technical: `Describe a technically challenging project relevant to ${input.targetRole} and how you delivered it.`,
+  };
+
+  return {
+    answerTips: [
+      "Lead with context in one sentence before detailing actions.",
+      "Highlight your decision-making process and trade-offs.",
+      "Close with one measurable result or concrete outcome.",
+    ],
+    category: input.category,
+    difficulty,
+    expectedStructure:
+      input.category === "behavioral"
+        ? "STAR"
+        : input.category === "technical"
+          ? "XYZ"
+          : "freeform",
+    question: questionByCategory[input.category],
+    whyThisQuestionMatters:
+      "This question tests role-relevant thinking, ownership, and your ability to communicate impact clearly.",
+  };
+}
+
+function createLocalInterviewQuestions(
+  input: GenerateInterviewQuestionsInput,
+  count: number,
+): GenerateInterviewQuestionsOutput {
+  const safeCount = Math.max(1, Math.min(maxGeneratedQuestions, count));
+  const questions: GeneratePracticeQuestionOutput[] = [];
+
+  for (let index = 0; index < safeCount; index += 1) {
+    const base = createLocalPracticeQuestion({
+      ...input,
+      difficulty: input.difficulty ?? "intermediate",
+    });
+
+    questions.push({
+      ...base,
+      question: `${base.question} (Focus ${index + 1})`,
+    });
+  }
+
+  return { questions };
+}
+
+function createLocalLearningCategories(
+  input: GenerateLearningCategoriesInput,
+): GenerateLearningCategoriesOutput {
+  return {
+    categories: [
+      {
+        description: `Build interview stories and delivery confidence for ${input.targetRole}.`,
+        destination: "interview",
+        id: "interview-core",
+        priority: 1,
+        starterLessonTitle: "Answer structure for high-impact responses",
+        title: "Interview Core",
+      },
+      {
+        description:
+          "Strengthen measurable impact statements and ATS readability.",
+        destination: "cv",
+        id: "cv-impact",
+        priority: 2,
+        starterLessonTitle: "Rewrite weak bullets with clear outcomes",
+        title: "CV Impact",
+      },
+      {
+        description:
+          "Improve role targeting and application quality with focused evidence.",
+        destination: "applications",
+        id: "application-strategy",
+        priority: 3,
+        starterLessonTitle: "Tailor your application to the job description",
+        title: "Application Strategy",
+      },
+      {
+        description:
+          "Close the highest-priority skill gaps for your target role.",
+        destination: "detail",
+        id: "skill-gap-plan",
+        priority: 4,
+        starterLessonTitle: "Choose one high-leverage skill for this week",
+        title: "Skill Gap Plan",
+      },
+    ],
+  };
+}
+
+function createLocalRoleLearningPlan(
+  input: GenerateRoleLearningPlanInput,
+): GenerateRoleLearningPlanOutput {
+  return {
+    modules: [
+      {
+        description:
+          "Define a role-targeted achievement narrative and measurable outcomes.",
+        estimatedMinutes: 15,
+        id: sanitizeKebabId("role-story-foundation"),
+        title: "Role Story Foundation",
+        type: "learn",
+        xp: 30,
+      },
+      {
+        description:
+          "Practice concise STAR/XYZ answers for your highest-frequency interview themes.",
+        estimatedMinutes: 20,
+        id: sanitizeKebabId("answer-drills"),
+        title: "Answer Drills",
+        type: "practice",
+        xp: 40,
+      },
+      {
+        description: `Run a timed mock interview round for ${input.targetRole}.`,
+        estimatedMinutes: 25,
+        id: sanitizeKebabId("mock-round"),
+        title: "Mock Round",
+        type: "mock_interview",
+        xp: 50,
+      },
+      {
+        description:
+          "Upgrade your CV bullets with quantified impact and stronger action verbs.",
+        estimatedMinutes: 18,
+        id: sanitizeKebabId("cv-upgrade"),
+        title: "CV Upgrade",
+        type: "cv",
+        xp: 35,
+      },
+    ],
+    summary:
+      "A short practical plan to sharpen interview communication, CV evidence, and role alignment in one focused cycle.",
+    title: `${input.targetRole} Focus Sprint`,
+  };
+}
+
+function createLocalLesson(input: GenerateLessonInput): GenerateLessonOutput {
+  return {
+    coachingSteps: [
+      "Start with one concrete example from your own work, not a generic statement.",
+      "Explain your decision process and trade-offs in simple, direct language.",
+      "Finish with measurable impact or a clear result.",
+    ],
+    estimatedMinutes: 10,
+    learningOutcomes: [
+      "Identify what interviewers are evaluating in this topic.",
+      "Structure your answer using a repeatable framework.",
+      "Deliver concise, role-relevant outcomes.",
+    ],
+    overview:
+      "This lesson helps you turn experience into structured, impact-focused responses you can use immediately.",
+    practicePrompt:
+      input.question ??
+      `Draft a 60-second response for a common ${input.targetRole} scenario and include one measurable outcome.`,
+    title: input.lessonTitle ?? `${input.categoryTitle}: practical coaching`,
+    xp: 25,
+  };
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -1009,6 +1826,283 @@ function getRequiredString(
     data: trimmedValue,
     ok: true,
   };
+}
+
+function getOptionalTrimmedString(
+  record: Record<string, unknown>,
+  key: string,
+  maxLength: number,
+): ApiValidationResult<string | undefined> {
+  const value = record[key];
+
+  if (value === undefined) {
+    return {
+      data: undefined,
+      ok: true,
+    };
+  }
+
+  if (typeof value !== "string") {
+    return invalid(`${key} must be a string.`);
+  }
+
+  const trimmedValue = value.trim();
+
+  if (trimmedValue.length > maxLength) {
+    return invalid(`${key} must be ${maxLength} characters or fewer.`);
+  }
+
+  return {
+    data: trimmedValue.length > 0 ? trimmedValue : undefined,
+    ok: true,
+  };
+}
+
+function validateUploadedFile(
+  value: unknown,
+  key: string,
+): ApiValidationResult<UploadedFileInput | undefined> {
+  if (value === undefined) {
+    return {
+      data: undefined,
+      ok: true,
+    };
+  }
+
+  const record = asRecord(value);
+
+  if (!record) {
+    return invalid(`${key} must be an object.`);
+  }
+
+  const name = getRequiredString(record, "name", maxFileNameLength);
+  const base64 = getRequiredString(record, "base64", maxRequestBytes);
+  const mimeType = getOptionalTrimmedString(
+    record,
+    "mimeType",
+    maxMimeTypeLength,
+  );
+
+  if (!name.ok) return name;
+  if (!base64.ok) return base64;
+  if (!mimeType.ok) return mimeType;
+
+  return {
+    data: {
+      base64: base64.data,
+      mimeType: mimeType.data,
+      name: name.data,
+    },
+    ok: true,
+  };
+}
+
+function getFileExtension(name: string): string {
+  const dot = name.lastIndexOf(".");
+
+  return dot >= 0 ? name.slice(dot + 1).toLowerCase() : "";
+}
+
+function decodePdfStringToken(value: string): string {
+  let decoded = "";
+
+  for (let index = 0; index < value.length; index += 1) {
+    const current = value[index];
+
+    if (current !== "\\") {
+      decoded += current;
+      continue;
+    }
+
+    const next = value[index + 1];
+
+    if (!next) {
+      break;
+    }
+
+    index += 1;
+
+    switch (next) {
+      case "n":
+        decoded += "\n";
+        break;
+      case "r":
+        decoded += "\r";
+        break;
+      case "t":
+        decoded += "\t";
+        break;
+      case "b":
+        decoded += "\b";
+        break;
+      case "f":
+        decoded += "\f";
+        break;
+      case "(":
+      case ")":
+      case "\\":
+        decoded += next;
+        break;
+      default: {
+        if (/[0-7]/.test(next)) {
+          let octal = next;
+          let octalCount = 1;
+
+          while (
+            octalCount < 3 &&
+            index + 1 < value.length &&
+            /[0-7]/.test(value[index + 1] ?? "")
+          ) {
+            octal += value[index + 1];
+            index += 1;
+            octalCount += 1;
+          }
+
+          decoded += String.fromCharCode(parseInt(octal, 8));
+          break;
+        }
+
+        decoded += next;
+      }
+    }
+  }
+
+  return decoded;
+}
+
+function extractPdfTextFromContent(content: string): string[] {
+  const segments: string[] = [];
+
+  const tjMatches = content.matchAll(/\((?:\\.|[^\\()])*\)\s*Tj/g);
+  for (const match of tjMatches) {
+    const tokenMatch = match[0].match(/^\(((?:\\.|[^\\()])*)\)\s*Tj$/);
+    if (!tokenMatch?.[1]) {
+      continue;
+    }
+
+    const decoded = decodePdfStringToken(tokenMatch[1]).trim();
+    if (decoded.length > 0) {
+      segments.push(decoded);
+    }
+  }
+
+  const tjArrayMatches = content.matchAll(/\[(.*?)\]\s*TJ/gs);
+  for (const match of tjArrayMatches) {
+    const payload = match[1] ?? "";
+    const stringTokens = payload.match(/\((?:\\.|[^\\()])*\)/g) ?? [];
+
+    for (const token of stringTokens) {
+      const raw = token.slice(1, -1);
+      const decoded = decodePdfStringToken(raw).trim();
+
+      if (decoded.length > 0) {
+        segments.push(decoded);
+      }
+    }
+  }
+
+  return segments;
+}
+
+function tryLightweightPdfTextExtraction(buffer: Buffer): string | null {
+  const source = buffer.toString("latin1");
+  const segments: string[] = [];
+
+  const streamMatches = source.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g);
+
+  for (const match of streamMatches) {
+    const streamBody = match[1] ?? "";
+
+    if (streamBody.length === 0) {
+      continue;
+    }
+
+    const streamBuffer = Buffer.from(streamBody, "latin1");
+    const candidates: string[] = [streamBody];
+
+    try {
+      const inflated = inflateSync(streamBuffer).toString("latin1");
+      candidates.push(inflated);
+    } catch {
+      // Stream is not Flate-compressed; ignore.
+    }
+
+    for (const candidate of candidates) {
+      segments.push(...extractPdfTextFromContent(candidate));
+    }
+  }
+
+  if (segments.length === 0) {
+    segments.push(...extractPdfTextFromContent(source));
+  }
+
+  const normalized = segments.join(" ").replace(/\s+/g, " ").trim();
+
+  return normalized.length >= 20 ? normalized : null;
+}
+
+export async function extractTextFromUploadedFile(
+  file: UploadedFileInput,
+): Promise<string | null> {
+  let buffer: Buffer;
+
+  try {
+    const cleanBase64 = file.base64.replace(/^data:[^;]+;base64,/, "");
+    buffer = Buffer.from(cleanBase64, "base64");
+  } catch {
+    return null;
+  }
+
+  if (buffer.length === 0) {
+    return null;
+  }
+
+  const mimeType = file.mimeType ?? "";
+  const extension = getFileExtension(file.name);
+
+  if (extension === "pdf" || mimeType === "application/pdf") {
+    try {
+      const pdfParse = await import("pdf-parse");
+      const parseFn = pdfParse.default || pdfParse;
+      const data = await parseFn(buffer);
+      const text = typeof data.text === "string" ? data.text.trim() : "";
+
+      return text.length > 0 ? text : null;
+    } catch {
+      return tryLightweightPdfTextExtraction(buffer);
+    }
+  }
+
+  if (
+    extension === "docx" ||
+    mimeType ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ) {
+    try {
+      const mammoth = await import("mammoth");
+      const arrayBuffer = Uint8Array.from(buffer).buffer;
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      const text = result.value?.trim() ?? "";
+
+      return text.length > 0 ? text : null;
+    } catch {
+      return null;
+    }
+  }
+
+  if (
+    extension === "txt" ||
+    extension === "rtf" ||
+    mimeType.startsWith("text/")
+  ) {
+    const text = buffer.toString("utf8").trim();
+
+    return text.length > 0 ? text : null;
+  }
+
+  const fallbackText = buffer.toString("utf8").trim();
+
+  return fallbackText.length > 0 ? fallbackText : null;
 }
 
 function getCategory(value: unknown): ApiValidationResult<InterviewCategory> {
@@ -1137,14 +2231,19 @@ function getOptionalString(
 }
 
 function getLessonFocus(value: unknown): ApiValidationResult<LessonFocus> {
-  if (typeof value === "string" && lessonFocuses.includes(value as LessonFocus)) {
+  if (
+    typeof value === "string" &&
+    lessonFocuses.includes(value as LessonFocus)
+  ) {
     return {
       data: value as LessonFocus,
       ok: true,
     };
   }
 
-  return invalid("focus must be applications, career-guidance, cv, interview, or skills.");
+  return invalid(
+    "focus must be applications, career-guidance, cv, interview, or skills.",
+  );
 }
 
 function getOptionalStructure(
@@ -1173,8 +2272,10 @@ function getOptionalStructure(
 async function fetchGeminiStructuredJson(
   prompt: string,
   schema: JsonSchema,
+  inlineFiles?: { data: string; mimeType: string }[],
 ): Promise<unknown> {
   return getAiProvider().generateJson({
+    inlineFiles,
     prompt,
     schema,
   });
@@ -1192,8 +2293,17 @@ function normalizeInterviewFeedback(value: unknown): InterviewFeedbackOutput {
       starQuality: requireScore(categories.starQuality, "starQuality"),
       structure: requireScore(categories.structure, "structure"),
     },
-    improvedAnswer: requireString(record.improvedAnswer, "improvedAnswer", 1_200),
-    improvements: requireStringList(record.improvements, "improvements", 4, 220),
+    improvedAnswer: requireString(
+      record.improvedAnswer,
+      "improvedAnswer",
+      1_200,
+    ),
+    improvements: requireStringList(
+      record.improvements,
+      "improvements",
+      4,
+      220,
+    ),
     nextPracticeSuggestion: requireString(
       record.nextPracticeSuggestion,
       "nextPracticeSuggestion",
@@ -1207,8 +2317,22 @@ function normalizeInterviewFeedback(value: unknown): InterviewFeedbackOutput {
 
 function normalizeCvFeedback(value: unknown): CvFeedbackOutput {
   const record = requireRecord(value, "CV feedback");
+  const categoriesRecord = requireRecord(record.categories, "CV categories");
 
   return {
+    categories: {
+      atsReadability: requireScore(
+        categoriesRecord.atsReadability,
+        "atsReadability",
+      ),
+      clarity: requireScore(categoriesRecord.clarity, "clarity"),
+      impact: requireScore(categoriesRecord.impact, "impact"),
+      relevance: requireScore(categoriesRecord.relevance, "relevance"),
+      roleAlignment: requireScore(
+        categoriesRecord.roleAlignment,
+        "roleAlignment",
+      ),
+    },
     improvedBullets: requireStringList(
       record.improvedBullets,
       "improvedBullets",
@@ -1235,11 +2359,16 @@ function normalizePracticeQuestion(
       : requestedCategory;
 
   return {
+    answerTips: requireStringList(record.answerTips, "answerTips", 3, 140),
     category,
     difficulty: requireDifficulty(record.difficulty),
     expectedStructure: requireStructure(record.expectedStructure),
-    guidance: requireStringList(record.guidance, "guidance", 3, 140),
     question: requireString(record.question, "question", 500),
+    whyThisQuestionMatters: requireString(
+      record.whyThisQuestionMatters,
+      "whyThisQuestionMatters",
+      280,
+    ),
   };
 }
 
@@ -1258,11 +2387,15 @@ function normalizeInterviewQuestions(
   return {
     questions: questionsValue
       .slice(0, requestedCount)
-      .map((question) => normalizePracticeQuestion(question, requestedCategory)),
+      .map((question) =>
+        normalizePracticeQuestion(question, requestedCategory),
+      ),
   };
 }
 
-function normalizeLearningCategories(value: unknown): GenerateLearningCategoriesOutput {
+function normalizeLearningCategories(
+  value: unknown,
+): GenerateLearningCategoriesOutput {
   const record = requireRecord(value, "learning categories");
   const categoriesValue = record.categories;
 
@@ -1298,7 +2431,12 @@ function normalizeLesson(value: unknown): GenerateLessonOutput {
   const record = requireRecord(value, "lesson");
 
   return {
-    coachingSteps: requireStringList(record.coachingSteps, "coachingSteps", 5, 220),
+    coachingSteps: requireStringList(
+      record.coachingSteps,
+      "coachingSteps",
+      5,
+      220,
+    ),
     estimatedMinutes: requireInteger(
       record.estimatedMinutes,
       "estimatedMinutes",
@@ -1349,7 +2487,11 @@ function requireScore(value: unknown, label: string): number {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-function requireString(value: unknown, label: string, maxLength: number): string {
+function requireString(
+  value: unknown,
+  label: string,
+  maxLength: number,
+): string {
   if (typeof value !== "string") {
     throw new Error(`${label} must be a string.`);
   }
@@ -1381,7 +2523,9 @@ function requireStringList(
     .map((item) => item.slice(0, maxItemLength));
 }
 
-function requireLearningDestination(value: unknown): LearningCategoryDestination {
+function requireLearningDestination(
+  value: unknown,
+): LearningCategoryDestination {
   if (
     typeof value === "string" &&
     learningDestinations.includes(value as LearningCategoryDestination)
@@ -1389,11 +2533,16 @@ function requireLearningDestination(value: unknown): LearningCategoryDestination
     return value as LearningCategoryDestination;
   }
 
-  throw new Error("destination must be applications, cv, detail, or interview.");
+  throw new Error(
+    "destination must be applications, cv, detail, or interview.",
+  );
 }
 
 function requireDifficulty(value: unknown): PracticeQuestionDifficulty {
-  if (typeof value === "string" && practiceQuestionDifficulties.includes(value as PracticeQuestionDifficulty)) {
+  if (
+    typeof value === "string" &&
+    practiceQuestionDifficulties.includes(value as PracticeQuestionDifficulty)
+  ) {
     return value as PracticeQuestionDifficulty;
   }
 
@@ -1409,6 +2558,54 @@ function requireStructure(value: unknown): PracticeQuestionStructure {
   }
 
   throw new Error("expectedStructure must be STAR, XYZ, or freeform.");
+}
+
+function requireModuleType(value: unknown): RoleLearningModuleType {
+  if (
+    typeof value === "string" &&
+    roleLearningModuleTypes.includes(value as RoleLearningModuleType)
+  ) {
+    return value as RoleLearningModuleType;
+  }
+
+  throw new Error("type must be learn, practice, mock_interview, or cv.");
+}
+
+function normalizeRoleLearningPlan(
+  value: unknown,
+): GenerateRoleLearningPlanOutput {
+  const record = requireRecord(value, "role learning plan");
+  const modulesValue = record.modules;
+
+  if (!Array.isArray(modulesValue)) {
+    throw new Error("modules must be an array.");
+  }
+
+  return {
+    modules: modulesValue.slice(0, 6).map((module) => {
+      const moduleRecord = requireRecord(module, "learning module");
+
+      return {
+        description: requireString(
+          moduleRecord.description,
+          "description",
+          220,
+        ),
+        estimatedMinutes: requireInteger(
+          moduleRecord.estimatedMinutes,
+          "estimatedMinutes",
+          3,
+          60,
+        ),
+        id: sanitizeKebabId(requireString(moduleRecord.id, "id", 80)),
+        title: requireString(moduleRecord.title, "title", 80),
+        type: requireModuleType(moduleRecord.type),
+        xp: requireInteger(moduleRecord.xp, "xp", 10, 100),
+      };
+    }),
+    summary: requireString(record.summary, "summary", 360),
+    title: requireString(record.title, "title", 120),
+  };
 }
 
 function sanitizeKebabId(value: string) {

@@ -1,11 +1,16 @@
 import {
-  type AiGenerateJsonRequest,
-  type AiProvider,
+    type AiGenerateJsonRequest,
+    type AiProvider,
 } from "@/lib/ai/aiProvider";
 import { AiProviderError } from "@/lib/ai/providerErrors";
 
 const geminiApiBaseUrl = "https://generativelanguage.googleapis.com/v1beta";
-const defaultModel = "gemini-3.5-flash";
+const defaultModel = "gemini-2.5-flash-lite";
+const fallbackModels = [
+  "gemini-2.5-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash-lite",
+];
 const defaultTimeoutMs = 60_000;
 const maxAiResponseBytes = 14_000;
 
@@ -20,6 +25,7 @@ async function fetchGeminiStructuredJson({
   prompt,
   schema,
   timeoutMs = defaultTimeoutMs,
+  inlineFiles,
 }: AiGenerateJsonRequest): Promise<unknown> {
   const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
 
@@ -32,52 +38,86 @@ async function fetchGeminiStructuredJson({
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  const model = process.env.GEMINI_MODEL ?? defaultModel;
+  const configuredModel = (process.env.GEMINI_MODEL ?? "").trim();
+  const candidateModels = [configuredModel, ...fallbackModels].filter(
+    (model, index, allModels) =>
+      model.length > 0 && allModels.indexOf(model) === index,
+  );
+
+  if (candidateModels.length === 0) {
+    candidateModels.push(defaultModel);
+  }
 
   try {
-    const response = await fetch(getGenerateContentEndpoint(model), {
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }],
+    let lastModelError: AiProviderError | null = null;
+
+    for (const model of candidateModels) {
+      const response = await fetch(getGenerateContentEndpoint(model), {
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                ...(inlineFiles ?? []).map((file) => ({
+                  inlineData: { data: file.data, mimeType: file.mimeType },
+                })),
+              ],
+            },
+          ],
+          generationConfig: {
+            maxOutputTokens: 2_048,
+            responseMimeType: "application/json",
+            responseSchema: toGeminiGenerateContentSchema(schema),
+            temperature: 0.4,
+            ...getThinkingConfig(model),
           },
-        ],
-        generationConfig: {
-          maxOutputTokens: 2_048,
-          responseMimeType: "application/json",
-          responseSchema: toGeminiGenerateContentSchema(schema),
-          temperature: 0.4,
-          ...getThinkingConfig(model),
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
         },
-      }),
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
-      },
-      method: "POST",
-      signal: controller.signal,
-    });
+        method: "POST",
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      throw new AiProviderError("AI feedback service is unavailable.", 502);
+      if (!response.ok) {
+        const upstreamMessage = await readGeminiErrorMessage(response);
+        const providerError = mapGeminiHttpError(
+          response.status,
+          upstreamMessage,
+        );
+
+        if (shouldTryFallbackModel(response.status, upstreamMessage)) {
+          lastModelError = providerError;
+          continue;
+        }
+
+        throw providerError;
+      }
+
+      const responseBody: unknown = await response.json();
+      const outputText = extractGeminiOutputText(responseBody);
+
+      if (!outputText) {
+        throw new Error("Gemini response did not include JSON output text.");
+      }
+
+      if (outputText.length > maxAiResponseBytes) {
+        throw new Error("Gemini response exceeded the maximum allowed size.");
+      }
+
+      try {
+        return JSON.parse(outputText);
+      } catch {
+        throw new Error("Gemini response was not valid JSON.");
+      }
     }
 
-    const responseBody: unknown = await response.json();
-    const outputText = extractGeminiOutputText(responseBody);
-
-    if (!outputText) {
-      throw new Error("Gemini response did not include JSON output text.");
+    if (lastModelError) {
+      throw lastModelError;
     }
 
-    if (outputText.length > maxAiResponseBytes) {
-      throw new Error("Gemini response exceeded the maximum allowed size.");
-    }
-
-    try {
-      return JSON.parse(outputText);
-    } catch {
-      throw new Error("Gemini response was not valid JSON.");
-    }
+    throw new AiProviderError("AI feedback service is unavailable.", 502);
   } catch (error) {
     if (error instanceof AiProviderError) {
       throw error;
@@ -93,8 +133,80 @@ async function fetchGeminiStructuredJson({
   }
 }
 
+function shouldTryFallbackModel(status: number, message: string): boolean {
+  // Retry on quota exhaustion or temporary unavailability — try the next model.
+  if (status === 429 || status === 503) {
+    return true;
+  }
+
+  if (status !== 400 && status !== 404) {
+    return false;
+  }
+
+  const normalizedMessage = message.toLowerCase();
+
+  return (
+    normalizedMessage.includes("model") ||
+    normalizedMessage.includes("not found") ||
+    normalizedMessage.includes("unsupported") ||
+    normalizedMessage.includes("invalid argument")
+  );
+}
+
+async function readGeminiErrorMessage(response: Response): Promise<string> {
+  try {
+    const responseBody = (await response.json()) as {
+      error?: { message?: string };
+    };
+
+    const message = responseBody.error?.message?.trim();
+
+    if (message) {
+      return message;
+    }
+  } catch {
+    // Ignore malformed upstream error body.
+  }
+
+  return "";
+}
+
+function mapGeminiHttpError(
+  status: number,
+  _upstreamMessage: string,
+): AiProviderError {
+  if (status === 401 || status === 403) {
+    return new AiProviderError(
+      "AI feedback is not configured correctly. Check GEMINI_API_KEY.",
+      503,
+    );
+  }
+
+  if (status === 429) {
+    return new AiProviderError(
+      "AI feedback service is rate-limited. Please try again shortly.",
+      429,
+    );
+  }
+
+  if (status >= 500) {
+    return new AiProviderError("AI feedback service is unavailable.", 502);
+  }
+
+  if (status >= 400) {
+    return new AiProviderError(
+      "CareerFox AI could not process this request right now.",
+      502,
+    );
+  }
+
+  return new AiProviderError("AI feedback service is unavailable.", 502);
+}
+
 function getGenerateContentEndpoint(model: string) {
-  const modelName = model.startsWith("models/") ? model.slice("models/".length) : model;
+  const modelName = model.startsWith("models/")
+    ? model.slice("models/".length)
+    : model;
 
   return `${geminiApiBaseUrl}/models/${encodeURIComponent(modelName)}:generateContent`;
 }
@@ -110,7 +222,11 @@ function getThinkingConfig(model: string): Record<string, unknown> {
     };
   }
 
-  if (normalizedModel.includes("gemini-2.5-flash")) {
+  // Lite models do not support thinkingConfig — only apply to the full flash variant.
+  if (
+    normalizedModel.includes("gemini-2.5-flash") &&
+    !normalizedModel.includes("lite")
+  ) {
     return {
       thinkingConfig: {
         thinkingBudget: 0,
@@ -124,7 +240,12 @@ function getThinkingConfig(model: string): Record<string, unknown> {
 function toGeminiGenerateContentSchema(
   schema: AiGenerateJsonRequest["schema"],
 ): Record<string, unknown> {
-  const { additionalProperties: _additionalProperties, items, properties, ...rest } = schema;
+  const {
+    additionalProperties: _additionalProperties,
+    items,
+    properties,
+    ...rest
+  } = schema;
 
   return {
     ...rest,

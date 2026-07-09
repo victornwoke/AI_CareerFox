@@ -1,8 +1,14 @@
 import { useAuth } from "@clerk/expo";
 import { Image } from "expo-image";
-import { Redirect, type Href, useRouter } from "expo-router";
+import { Redirect, useRouter, type Href } from "expo-router";
 import { useCallback } from "react";
-import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import {
+    Pressable,
+    ScrollView,
+    Text,
+    useWindowDimensions,
+    View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/constants/colors";
@@ -51,7 +57,9 @@ export default function ExperienceLevelScreen() {
   const selectedExperienceLevelId = useCareerStore(
     (state) => state.selectedExperienceLevel,
   );
-  const markSetupCompleted = useCareerStore((state) => state.markSetupCompleted);
+  const markSetupCompleted = useCareerStore(
+    (state) => state.markSetupCompleted,
+  );
   const setSelectedExperienceLevelId = useCareerStore(
     (state) => state.setSelectedExperienceLevel,
   );
@@ -176,7 +184,9 @@ export default function ExperienceLevelScreen() {
                 <View className="ml-4 flex-1">
                   <Text
                     className="text-[19px] font-bold leading-[25px]"
-                    style={{ color: isSelected ? colors.primary : colors.textPrimary }}
+                    style={{
+                      color: isSelected ? colors.primary : colors.textPrimary,
+                    }}
                   >
                     {level.label}
                   </Text>
@@ -196,7 +206,11 @@ export default function ExperienceLevelScreen() {
                       accessibilityLabel="Selected"
                       contentFit="contain"
                       source="sf:checkmark"
-                      style={{ height: 17, tintColor: colors.primary, width: 17 }}
+                      style={{
+                        height: 17,
+                        tintColor: colors.primary,
+                        width: 17,
+                      }}
                     />
                   ) : null}
                 </View>

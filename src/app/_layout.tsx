@@ -2,9 +2,10 @@ import "../../global.css";
 
 import { ClerkProvider } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
-import { Stack, usePathname, useGlobalSearchParams } from "expo-router";
-import { useEffect, useRef } from "react";
+import { registerGlobals } from "@stream-io/react-native-webrtc";
+import { Stack, useGlobalSearchParams, usePathname } from "expo-router";
 import { PostHogProvider } from "posthog-react-native";
+import { useEffect, useRef } from "react";
 
 import { AnalyticsIdentitySync } from "@/components/auth/AnalyticsIdentitySync";
 import { CareerFoxStorageSync } from "@/components/auth/CareerFoxStorageSync";
@@ -12,6 +13,8 @@ import { GoalSetupStorageSync } from "@/components/auth/GoalSetupStorageSync";
 import { posthog } from "@/config/posthog";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
+
+registerGlobals();
 
 if (!publishableKey) {
   throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to your .env file.");
