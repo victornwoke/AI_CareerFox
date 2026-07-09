@@ -123,6 +123,7 @@ export default function CvResultsScreen() {
   const selectedExperienceLevel = useCareerStore(
     (state) => state.selectedExperienceLevel,
   );
+  const cloudProvider = useCareerStore((state) => state.cloudProvider);
 
   const [feedback, setFeedback] = useState<CvFeedbackOutput | null>(null);
   const [status, setStatus] = useState<"loading" | "success" | "error">(
@@ -162,6 +163,7 @@ export default function CvResultsScreen() {
       const result = await postCvFeedback({
         cvFile: normalizeUploadedFile(request.cvFile),
         cvText: request.cvText?.trim() || undefined,
+        cloudProvider: cloudProvider ?? undefined,
         experienceLevel: selectedExperienceLevel ?? undefined,
         jobDescription: request.jobDescription?.trim() || undefined,
         jobDescriptionFile: normalizeUploadedFile(request.jobDescriptionFile),
@@ -187,7 +189,13 @@ export default function CvResultsScreen() {
           : "CareerFox could not analyse your CV right now.",
       );
     }
-  }, [request, selectedExperienceLevel, targetRoleTitle, userId]);
+  }, [
+    cloudProvider,
+    request,
+    selectedExperienceLevel,
+    targetRoleTitle,
+    userId,
+  ]);
 
   useEffect(() => {
     if (!request || preconditionError || !userId) {
@@ -201,6 +209,7 @@ export default function CvResultsScreen() {
         const result = await postCvFeedback({
           cvFile: normalizeUploadedFile(request.cvFile),
           cvText: request.cvText?.trim() || undefined,
+          cloudProvider: cloudProvider ?? undefined,
           experienceLevel: selectedExperienceLevel ?? undefined,
           jobDescription: request.jobDescription?.trim() || undefined,
           jobDescriptionFile: normalizeUploadedFile(request.jobDescriptionFile),
@@ -245,6 +254,7 @@ export default function CvResultsScreen() {
     userId,
     selectedExperienceLevel,
     targetRoleTitle,
+    cloudProvider,
   ]);
 
   const displayStatus: "loading" | "success" | "error" = preconditionError

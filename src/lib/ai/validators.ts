@@ -7,6 +7,7 @@ export type AiPracticeMode =
 export type AiCoachContext = {
   answer?: string;
   cvText?: string;
+  cloudProvider?: string;
   experienceLevel: string;
   jobDescription?: string;
   practiceMode?: AiPracticeMode;

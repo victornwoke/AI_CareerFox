@@ -25,9 +25,7 @@ export const cvCoachRules = [
 ].join("\n");
 
 export function formatAiContext(context: PromptContext) {
-  const lines = [
-    `Target role: ${context.targetRole}`,
-  ];
+  const lines = [`Target role: ${context.targetRole}`];
 
   if (context.experienceLevel) {
     lines.push(`Experience level: ${context.experienceLevel}`);
@@ -35,6 +33,10 @@ export function formatAiContext(context: PromptContext) {
 
   if (context.selectedCareerPath) {
     lines.push(`Selected career path: ${context.selectedCareerPath}`);
+  }
+
+  if (context.cloudProvider) {
+    lines.push(`Cloud provider focus: ${context.cloudProvider}`);
   }
 
   if (context.practiceMode) {

@@ -20,23 +20,52 @@ import { useCareerStore } from "@/store/useCareerStore";
 
 const signInHref = "/sign-in" as Href;
 const experienceLevelHref = "/experience-level" as Href;
+const popularRoleIds = [
+  "software-engineer",
+  "cloud-engineer",
+  "devops-engineer",
+  "data-analyst",
+] as const;
+const popularRoleIdSet = new Set<string>(popularRoleIds);
 
 export default function TargetRoleScreen() {
   const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height, width } = useWindowDimensions();
+  const isPhone = width < 744;
+  const isCompactPhone = isPhone && (width < 390 || height < 760);
+  const horizontalPadding = width < 360 ? 18 : isCompactPhone ? 20 : 24;
+  const topPadding = Math.max(
+    insets.top + (isCompactPhone ? 8 : 12),
+    isCompactPhone ? 24 : 32,
+  );
+  const roleCardMinHeight = isCompactPhone ? 82 : 92;
+  const roleCardPaddingX = isCompactPhone ? 16 : 18;
+  const roleCardPaddingY = isCompactPhone ? 14 : 16;
+  const roleIconWrapSize = isCompactPhone ? 50 : 56;
+  const roleIconSize = isCompactPhone ? 24 : 26;
+  const roleTitleSize = isCompactPhone ? 16 : 18;
+  const roleTitleLeading = isCompactPhone ? 22 : 24;
   const [searchQuery, setSearchQuery] = useState("");
   const selectedRoleId = useCareerStore((state) => state.selectedTargetRole);
   const setSelectedRoleId = useCareerStore(
     (state) => state.setSelectedTargetRole,
   );
+  const cloudProvider = useCareerStore((state) => state.cloudProvider);
+  const setCloudProvider = useCareerStore((state) => state.setCloudProvider);
+
+  const cloudRoleIds = ["cloud-engineer", "devops-engineer"];
+  const isCloudRole = Boolean(
+    selectedRoleId && cloudRoleIds.includes(selectedRoleId),
+  );
+  const cloudProviders = ["AWS", "Azure", "GCP", "Multi-cloud"] as const;
 
   const filteredRoles = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
     if (!query) {
-      return targetRoles;
+      return targetRoles.filter((role) => popularRoleIdSet.has(role.id));
     }
 
     return targetRoles.filter((role) => {
@@ -66,13 +95,17 @@ export default function TargetRoleScreen() {
       const selectedRole = targetRoles.find((role) => role.id === roleId);
 
       setSelectedRoleId(roleId);
+      if (!cloudRoleIds.includes(roleId)) {
+        setCloudProvider(null);
+      }
       trackTargetRoleSelected({
         roleCategory: selectedRole?.category ?? null,
         roleId,
         roleTitle: selectedRole?.title ?? null,
       });
     },
-    [setSelectedRoleId],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [setSelectedRoleId, setCloudProvider],
   );
 
   if (!isLoaded) {
@@ -90,9 +123,9 @@ export default function TargetRoleScreen() {
         className="flex-1"
         contentContainerStyle={{
           minHeight: height,
-          paddingBottom: insets.bottom + 24,
-          paddingHorizontal: width < 360 ? 20 : 24,
-          paddingTop: Math.max(insets.top + 12, 32),
+          paddingBottom: insets.bottom + (isCompactPhone ? 16 : 24),
+          paddingHorizontal: horizontalPadding,
+          paddingTop: topPadding,
         }}
         contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="handled"
@@ -102,46 +135,80 @@ export default function TargetRoleScreen() {
           <View className="h-full w-[49%] rounded-full bg-primary" />
         </View>
 
-        <View className="mt-8 flex-row items-center gap-3">
-          <View className="h-16 w-16 items-center justify-center rounded-full bg-[#EEE9FF]">
+        <View
+          className="flex-row items-center gap-3"
+          style={{ marginTop: isCompactPhone ? 6 : 8 }}
+        >
+          <View
+            className="items-center justify-center rounded-full bg-[#EEE9FF]"
+            style={{
+              height: isCompactPhone ? 56 : 64,
+              width: isCompactPhone ? 56 : 64,
+            }}
+          >
             <SymbolIcon
               accessibilityLabel="Target role"
               color={colors.primary}
               name="target"
-              size={30}
+              size={isCompactPhone ? 26 : 30}
             />
           </View>
           <View className="flex-1">
-            <Text className="text-[28px] font-bold leading-[32px] text-text-primary">
+            <Text
+              className="font-bold text-text-primary"
+              style={{
+                fontSize: isCompactPhone ? 24 : 28,
+                lineHeight: isCompactPhone ? 29 : 32,
+              }}
+            >
               Select your target role
             </Text>
-            <Text className="mt-1 text-[15px] font-semibold leading-[20px] text-[#8F92A8]">
+            <Text
+              className="mt-1 font-semibold text-[#8F92A8]"
+              style={{
+                fontSize: isCompactPhone ? 14 : 15,
+                lineHeight: isCompactPhone ? 19 : 20,
+              }}
+            >
               This helps us personalize your coaching for you.
             </Text>
           </View>
         </View>
 
-        <View className="mt-6 h-[58px] flex-row items-center gap-3 rounded-[18px] border border-[#E9E0FF] bg-[#F6F2FF] px-5">
+        <View
+          className="mt-5 flex-row items-center gap-3 rounded-[18px] border border-[#E9E0FF] bg-[#F6F2FF] px-5"
+          style={{ height: isCompactPhone ? 52 : 58 }}
+        >
           <SymbolIcon
             accessibilityLabel="Search"
             color="#8F92A8"
             name="magnifyingglass"
-            size={22}
+            size={isCompactPhone ? 20 : 22}
           />
           <TextInput
             accessibilityLabel="Search target roles"
             autoCapitalize="words"
-            className="flex-1 text-[16px] font-semibold text-text-primary"
+            className="flex-1 font-semibold text-text-primary"
             onChangeText={setSearchQuery}
             placeholder="Search roles"
             placeholderTextColor="#8F92A8"
             returnKeyType="search"
+            style={{ fontSize: isCompactPhone ? 15 : 16 }}
             value={searchQuery}
           />
         </View>
 
-        <View className="mt-7 flex-row items-center justify-between">
-          <Text className="text-[18px] font-bold leading-[24px] text-text-primary">
+        <View
+          className="flex-row items-center justify-between"
+          style={{ marginTop: isCompactPhone ? 18 : 28 }}
+        >
+          <Text
+            className="font-bold text-text-primary"
+            style={{
+              fontSize: isCompactPhone ? 17 : 18,
+              lineHeight: isCompactPhone ? 22 : 24,
+            }}
+          >
             Popular roles
           </Text>
           <Text className="text-[13px] font-bold leading-[18px] text-[#8F92A8]">
@@ -149,7 +216,7 @@ export default function TargetRoleScreen() {
           </Text>
         </View>
 
-        <View className="mt-4 gap-3">
+        <View className="mt-3 gap-2.5">
           {filteredRoles.map((role) => {
             const isSelected = selectedRoleId === role.id;
 
@@ -167,28 +234,34 @@ export default function TargetRoleScreen() {
                   boxShadow: isSelected
                     ? "0 12px 28px rgba(108, 78, 245, 0.12)"
                     : "none",
-                  minHeight: 92,
-                  paddingHorizontal: 18,
-                  paddingVertical: 16,
+                  minHeight: roleCardMinHeight,
+                  paddingHorizontal: roleCardPaddingX,
+                  paddingVertical: roleCardPaddingY,
                 }}
               >
                 <View
-                  className="h-14 w-14 items-center justify-center rounded-[22px]"
-                  style={{ backgroundColor: role.iconBackground }}
+                  className="items-center justify-center rounded-[22px]"
+                  style={{
+                    backgroundColor: role.iconBackground,
+                    height: roleIconWrapSize,
+                    width: roleIconWrapSize,
+                  }}
                 >
                   <SymbolIcon
                     accessibilityLabel={role.title}
                     color={role.iconColor}
                     name={role.icon}
-                    size={26}
+                    size={roleIconSize}
                   />
                 </View>
 
                 <View className="ml-4 flex-1">
                   <Text
-                    className="text-[18px] font-bold leading-[24px]"
+                    className="font-bold"
                     style={{
                       color: isSelected ? colors.primary : colors.textPrimary,
+                      fontSize: roleTitleSize,
+                      lineHeight: roleTitleLeading,
                     }}
                   >
                     {role.title}
@@ -216,14 +289,71 @@ export default function TargetRoleScreen() {
           })}
         </View>
 
+        {isCloudRole ? (
+          <View
+            className="rounded-[24px] border border-[#E9E0FF] bg-[#F6F2FF]"
+            style={{
+              marginTop: isCompactPhone ? 14 : 20,
+              padding: isCompactPhone ? 16 : 20,
+            }}
+          >
+            <Text className="text-[15px] font-bold leading-[21px] text-text-primary">
+              Cloud provider focus
+            </Text>
+            <Text className="mt-1 text-[13px] font-semibold leading-[18px] text-[#8F92A8]">
+              Optional — sharpens interview and CV keyword feedback.
+            </Text>
+            <View className="mt-3 flex-row flex-wrap gap-2">
+              {cloudProviders.map((provider) => {
+                const isProviderSelected = cloudProvider === provider;
+
+                return (
+                  <Pressable
+                    accessibilityLabel={provider}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: isProviderSelected }}
+                    className="rounded-full px-4 py-2.5"
+                    key={provider}
+                    onPress={() =>
+                      setCloudProvider(isProviderSelected ? null : provider)
+                    }
+                    style={{
+                      backgroundColor: isProviderSelected
+                        ? colors.primary
+                        : colors.white,
+                      borderColor: isProviderSelected
+                        ? colors.primary
+                        : "#DDD4FF",
+                      borderWidth: 1.5,
+                    }}
+                  >
+                    <Text
+                      className="text-[14px] font-bold leading-[20px]"
+                      style={{
+                        color: isProviderSelected
+                          ? colors.white
+                          : colors.primary,
+                      }}
+                    >
+                      {provider}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+
         <Pressable
           accessibilityRole="button"
-          className="mt-7 min-h-16 items-center justify-center"
+          className="items-center justify-center"
           disabled={!selectedRoleId}
           onPress={handleContinue}
           style={{
             boxShadow: "0 12px 24px rgba(108, 78, 245, 0.22)",
             opacity: selectedRoleId ? 1 : 0.72,
+            marginTop: isCompactPhone ? 18 : 28,
+            minHeight: isCompactPhone ? 58 : 64,
           }}
         >
           <LinearGradient
@@ -236,11 +366,17 @@ export default function TargetRoleScreen() {
               borderRadius: 18,
               flex: 1,
               justifyContent: "center",
-              minHeight: 64,
+              minHeight: isCompactPhone ? 58 : 64,
               overflow: "hidden",
             }}
           >
-            <Text className="text-[17px] font-bold leading-[24px] text-white">
+            <Text
+              className="font-bold text-white"
+              style={{
+                fontSize: isCompactPhone ? 16 : 17,
+                lineHeight: isCompactPhone ? 22 : 24,
+              }}
+            >
               Continue
             </Text>
           </LinearGradient>

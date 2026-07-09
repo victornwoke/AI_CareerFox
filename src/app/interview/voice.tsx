@@ -166,6 +166,7 @@ export default function VoicePracticeScreen() {
   const selectedExperienceLevelId = useCareerStore(
     (state) => state.selectedExperienceLevel,
   );
+  const cloudProvider = useCareerStore((state) => state.cloudProvider);
   const activeQuestionId = useInterviewStore((state) => state.activeQuestionId);
   const answerDraftsByQuestionId = useInterviewStore(
     (state) => state.answerDraftsByQuestionId,
@@ -426,6 +427,7 @@ export default function VoicePracticeScreen() {
       const feedback = await postInterviewFeedback({
         answer: trimmedAnswer,
         category: activeQuestion.category,
+        cloudProvider: cloudProvider ?? undefined,
         experienceLevel: experienceLabel,
         jobDescription: latestJobDescription ?? undefined,
         question: activeQuestion.question,

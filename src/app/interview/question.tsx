@@ -78,6 +78,7 @@ export default function InterviewQuestionScreen() {
   const selectedExperienceLevelId = useCareerStore(
     (state) => state.selectedExperienceLevel,
   );
+  const cloudProvider = useCareerStore((state) => state.cloudProvider);
   const activeQuestionId = useInterviewStore((state) => state.activeQuestionId);
   const answerDraftsByQuestionId = useInterviewStore(
     (state) => state.answerDraftsByQuestionId,
@@ -266,6 +267,7 @@ export default function InterviewQuestionScreen() {
       const feedback = await postInterviewFeedback({
         answer: trimmedAnswer,
         category: lesson.category,
+        cloudProvider: cloudProvider ?? undefined,
         experienceLevel: experienceLabel,
         jobDescription: latestJobDescription,
         question: lesson.question,

@@ -150,6 +150,7 @@ export default function CvScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isNarrow = width < 370;
+  const isPhone = width < 744;
   const [cvFile, setCvFile] = useState<UploadedDocument | null>(null);
   const [cvFileText, setCvFileText] = useState<string | null>(null);
   const [cvFileUnsupported, setCvFileUnsupported] = useState(false);
@@ -321,7 +322,7 @@ export default function CvScreen() {
         style={{
           paddingHorizontal: isNarrow ? 20 : 24,
           paddingTop: Math.max(insets.top - 20, 18),
-          paddingBottom: 14,
+          paddingBottom: isPhone ? 8 : 14,
         }}
       >
         <View className="flex-row items-center justify-between">
@@ -343,17 +344,46 @@ export default function CvScreen() {
           </View>
         </View>
 
-        <View className="mt-8">
-          <View className="h-14 w-14 items-center justify-center rounded-[22px] bg-white/18">
-            <SymbolIcon color={colors.white} name="doc.text.fill" size={30} />
+        <View
+          className="flex-row items-center gap-4"
+          style={{ marginTop: isPhone ? 16 : 32 }}
+        >
+          <View
+            className="items-center justify-center rounded-[22px] bg-white/18"
+            style={{
+              height: isPhone ? 48 : 56,
+              width: isPhone ? 48 : 56,
+              flexShrink: 0,
+            }}
+          >
+            <SymbolIcon
+              color={colors.white}
+              name="doc.text.fill"
+              size={isPhone ? 26 : 30}
+            />
           </View>
-          <Text className="mt-5 text-[30px] font-bold leading-[36px] text-white">
-            CV Coach
-          </Text>
-          <Text className="mt-2 max-w-[310px] text-[16px] font-semibold leading-[24px] text-white/76">
-            Paste or upload your CV, then add a job description for sharper
-            feedback.
-          </Text>
+          <View className="flex-1">
+            <Text
+              className="font-bold text-white"
+              style={{
+                fontSize: isPhone ? 26 : 30,
+                lineHeight: isPhone ? 32 : 36,
+              }}
+            >
+              CV Coach
+            </Text>
+            <Text
+              className="font-semibold text-white/76"
+              style={{
+                fontSize: isPhone ? 14 : 16,
+                lineHeight: isPhone ? 20 : 24,
+                marginTop: isPhone ? 2 : 4,
+              }}
+            >
+              Paste or upload your CV, then add a job description for sharper
+              feedback.
+            </Text>
+          </View>
         </View>
       </LinearGradient>
 

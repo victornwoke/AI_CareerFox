@@ -7,7 +7,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "behavioral",
     difficulty: "beginner",
     question: "Tell me about a time you took ownership of a bug or feature.",
-    guidance: ["Set the context briefly.", "Explain your specific responsibility.", "Share the outcome and what changed afterward."],
+    guidance: [
+      "Set the context briefly.",
+      "Explain your specific responsibility.",
+      "Share the outcome and what changed afterward.",
+    ],
     expectedStructure: "STAR",
   },
   {
@@ -15,8 +19,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "software-engineer",
     category: "technical",
     difficulty: "intermediate",
-    question: "How would you design a simple REST API for tracking job applications?",
-    guidance: ["Define the main resources.", "Mention validation and error handling.", "Explain how you would test the API."],
+    question:
+      "How would you design a simple REST API for tracking job applications?",
+    guidance: [
+      "Define the main resources.",
+      "Mention validation and error handling.",
+      "Explain how you would test the API.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -24,8 +33,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "software-engineer",
     category: "technical",
     difficulty: "advanced",
-    question: "A screen is slow after a new list feature ships. How would you investigate and improve it?",
-    guidance: ["Start with measurement.", "Separate rendering, data, and network causes.", "Describe one practical optimization and its tradeoff."],
+    question:
+      "A screen is slow after a new list feature ships. How would you investigate and improve it?",
+    guidance: [
+      "Start with measurement.",
+      "Separate rendering, data, and network causes.",
+      "Describe one practical optimization and its tradeoff.",
+    ],
     expectedStructure: "XYZ",
   },
   {
@@ -34,7 +48,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "hr",
     difficulty: "beginner",
     question: "Why are you interested in this software engineering role?",
-    guidance: ["Connect your skills to the role.", "Reference the product or team mission.", "Keep the answer specific and realistic."],
+    guidance: [
+      "Connect your skills to the role.",
+      "Reference the product or team mission.",
+      "Keep the answer specific and realistic.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -42,8 +60,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "product-manager",
     category: "behavioral",
     difficulty: "intermediate",
-    question: "Tell me about a time you influenced a team without direct authority.",
-    guidance: ["Name the goal and stakeholders.", "Explain how you built alignment.", "Share evidence that the team moved forward."],
+    question:
+      "Tell me about a time you influenced a team without direct authority.",
+    guidance: [
+      "Name the goal and stakeholders.",
+      "Explain how you built alignment.",
+      "Share evidence that the team moved forward.",
+    ],
     expectedStructure: "STAR",
   },
   {
@@ -51,8 +74,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "product-manager",
     category: "case",
     difficulty: "intermediate",
-    question: "You have three feature requests and capacity for one. How would you decide what to build?",
-    guidance: ["Clarify users and business goals.", "Compare impact, confidence, effort, and risk.", "Explain how you would communicate the decision."],
+    question:
+      "You have three feature requests and capacity for one. How would you decide what to build?",
+    guidance: [
+      "Clarify users and business goals.",
+      "Compare impact, confidence, effort, and risk.",
+      "Explain how you would communicate the decision.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -60,8 +88,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "product-manager",
     category: "technical",
     difficulty: "advanced",
-    question: "What metrics would you use to evaluate whether a new onboarding flow is working?",
-    guidance: ["Choose one north-star outcome.", "Include leading and lagging indicators.", "Mention guardrail metrics and segmentation."],
+    question:
+      "What metrics would you use to evaluate whether a new onboarding flow is working?",
+    guidance: [
+      "Choose one north-star outcome.",
+      "Include leading and lagging indicators.",
+      "Mention guardrail metrics and segmentation.",
+    ],
     expectedStructure: "XYZ",
   },
   {
@@ -70,7 +103,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "hr",
     difficulty: "beginner",
     question: "What makes you a strong fit for product management?",
-    guidance: ["Show customer thinking.", "Show delivery and stakeholder habits.", "Use one concrete proof point."],
+    guidance: [
+      "Show customer thinking.",
+      "Show delivery and stakeholder habits.",
+      "Use one concrete proof point.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -79,7 +116,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "behavioral",
     difficulty: "beginner",
     question: "Tell me about a time your analysis changed a decision.",
-    guidance: ["Describe the decision at stake.", "Explain your analysis method.", "Share the business result or learning."],
+    guidance: [
+      "Describe the decision at stake.",
+      "Explain your analysis method.",
+      "Share the business result or learning.",
+    ],
     expectedStructure: "STAR",
   },
   {
@@ -87,8 +128,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "data-analyst",
     category: "technical",
     difficulty: "intermediate",
-    question: "How would you find users who applied to more than three jobs in the last 30 days?",
-    guidance: ["Identify the needed tables and fields.", "Use filtering, grouping, and counting.", "Mention edge cases like duplicate applications."],
+    question:
+      "How would you find users who applied to more than three jobs in the last 30 days?",
+    guidance: [
+      "Identify the needed tables and fields.",
+      "Use filtering, grouping, and counting.",
+      "Mention edge cases like duplicate applications.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -96,8 +142,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "data-analyst",
     category: "case",
     difficulty: "intermediate",
-    question: "A hiring team asks for a dashboard on application quality. What would you include?",
-    guidance: ["Clarify the audience and action.", "Pick metrics that show quality, speed, and source.", "Explain how you would avoid misleading conclusions."],
+    question:
+      "A hiring team asks for a dashboard on application quality. What would you include?",
+    guidance: [
+      "Clarify the audience and action.",
+      "Pick metrics that show quality, speed, and source.",
+      "Explain how you would avoid misleading conclusions.",
+    ],
     expectedStructure: "XYZ",
   },
   {
@@ -105,44 +156,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "data-analyst",
     category: "hr",
     difficulty: "beginner",
-    question: "Which data tools are you strongest with, and how have you used them?",
-    guidance: ["Name tools honestly.", "Connect each tool to a practical task.", "Share one result or improvement."],
-    expectedStructure: "freeform",
-  },
-  {
-    id: "ux-designer-behavioral-feedback",
-    roleId: "ux-designer",
-    category: "behavioral",
-    difficulty: "beginner",
-    question: "Tell me about a time you received difficult feedback on a design.",
-    guidance: ["Explain the design context.", "Describe how you evaluated the feedback.", "Share what changed and what you learned."],
-    expectedStructure: "STAR",
-  },
-  {
-    id: "ux-designer-technical-research",
-    roleId: "ux-designer",
-    category: "technical",
-    difficulty: "intermediate",
-    question: "How do you decide which user research method to use?",
-    guidance: ["Start with the product question.", "Compare generative and evaluative research.", "Mention constraints like time, access, and risk."],
-    expectedStructure: "freeform",
-  },
-  {
-    id: "ux-designer-case-checkout",
-    roleId: "ux-designer",
-    category: "case",
-    difficulty: "advanced",
-    question: "A mobile checkout flow has high drop-off. How would you approach redesigning it?",
-    guidance: ["Map the current journey.", "Use data and research to locate friction.", "Propose and test focused improvements."],
-    expectedStructure: "XYZ",
-  },
-  {
-    id: "ux-designer-hr-portfolio",
-    roleId: "ux-designer",
-    category: "hr",
-    difficulty: "beginner",
-    question: "Which portfolio project best represents your design process?",
-    guidance: ["Choose a relevant project.", "Explain your role and constraints.", "Focus on decisions, evidence, and impact."],
+    question:
+      "Which data tools are you strongest with, and how have you used them?",
+    guidance: [
+      "Name tools honestly.",
+      "Connect each tool to a practical task.",
+      "Share one result or improvement.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -151,7 +171,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "behavioral",
     difficulty: "intermediate",
     question: "Tell me about a campaign that did not perform as expected.",
-    guidance: ["Name the goal and metric.", "Explain what you diagnosed.", "Show what you changed and what you learned."],
+    guidance: [
+      "Name the goal and metric.",
+      "Explain what you diagnosed.",
+      "Show what you changed and what you learned.",
+    ],
     expectedStructure: "STAR",
   },
   {
@@ -159,8 +183,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "marketing-manager",
     category: "technical",
     difficulty: "intermediate",
-    question: "How would you choose channels for launching a new career coaching app?",
-    guidance: ["Define the audience and message.", "Compare channel fit and cost.", "Explain how you would measure early signal."],
+    question:
+      "How would you choose channels for launching a new career coaching app?",
+    guidance: [
+      "Define the audience and message.",
+      "Compare channel fit and cost.",
+      "Explain how you would measure early signal.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -168,8 +197,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "marketing-manager",
     category: "case",
     difficulty: "advanced",
-    question: "Traffic is growing but sign-ups are flat. How would you investigate?",
-    guidance: ["Break the funnel into steps.", "Look for segment and source differences.", "Prioritize experiments with clear learning goals."],
+    question:
+      "Traffic is growing but sign-ups are flat. How would you investigate?",
+    guidance: [
+      "Break the funnel into steps.",
+      "Look for segment and source differences.",
+      "Prioritize experiments with clear learning goals.",
+    ],
     expectedStructure: "XYZ",
   },
   {
@@ -178,7 +212,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "hr",
     difficulty: "beginner",
     question: "What brands or campaigns inspire your marketing approach?",
-    guidance: ["Pick examples with relevance.", "Explain the strategy behind them.", "Connect the lesson to this role."],
+    guidance: [
+      "Pick examples with relevance.",
+      "Explain the strategy behind them.",
+      "Connect the lesson to this role.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -187,7 +225,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "behavioral",
     difficulty: "beginner",
     question: "Tell me about a time you clarified ambiguous requirements.",
-    guidance: ["Describe what was unclear.", "Explain how you gathered input.", "Share the final decision and impact."],
+    guidance: [
+      "Describe what was unclear.",
+      "Explain how you gathered input.",
+      "Share the final decision and impact.",
+    ],
     expectedStructure: "STAR",
   },
   {
@@ -196,7 +238,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "technical",
     difficulty: "intermediate",
     question: "How would you map and improve an inefficient approval process?",
-    guidance: ["Capture the current process.", "Identify bottlenecks and owners.", "Recommend changes with measurable success criteria."],
+    guidance: [
+      "Capture the current process.",
+      "Identify bottlenecks and owners.",
+      "Recommend changes with measurable success criteria.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -204,8 +250,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "business-analyst",
     category: "case",
     difficulty: "intermediate",
-    question: "Two stakeholder groups want conflicting outcomes. How would you handle it?",
-    guidance: ["Clarify the underlying goals.", "Make tradeoffs visible.", "Facilitate a decision based on value and constraints."],
+    question:
+      "Two stakeholder groups want conflicting outcomes. How would you handle it?",
+    guidance: [
+      "Clarify the underlying goals.",
+      "Make tradeoffs visible.",
+      "Facilitate a decision based on value and constraints.",
+    ],
     expectedStructure: "XYZ",
   },
   {
@@ -214,7 +265,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "hr",
     difficulty: "beginner",
     question: "What business domains are you most interested in and why?",
-    guidance: ["Be honest about your interests.", "Connect interest to transferable skills.", "Show curiosity about the company's domain."],
+    guidance: [
+      "Be honest about your interests.",
+      "Connect interest to transferable skills.",
+      "Show curiosity about the company's domain.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -223,7 +278,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "behavioral",
     difficulty: "intermediate",
     question: "Tell me about a time you helped resolve a production incident.",
-    guidance: ["Explain the impact and urgency.", "Describe your role in diagnosis or recovery.", "Share the prevention or learning afterward."],
+    guidance: [
+      "Explain the impact and urgency.",
+      "Describe your role in diagnosis or recovery.",
+      "Share the prevention or learning afterward.",
+    ],
     expectedStructure: "STAR",
   },
   {
@@ -231,8 +290,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "cloud-engineer",
     category: "technical",
     difficulty: "advanced",
-    question: "How would you design a secure cloud environment for a small production app?",
-    guidance: ["Cover identity, networking, and secrets.", "Mention monitoring and backup basics.", "Explain tradeoffs for cost and complexity."],
+    question:
+      "How would you design a secure cloud environment for a small production app?",
+    guidance: [
+      "Cover identity, networking, and secrets.",
+      "Mention monitoring and backup basics.",
+      "Explain tradeoffs for cost and complexity.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -240,8 +304,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "cloud-engineer",
     category: "case",
     difficulty: "intermediate",
-    question: "Cloud costs suddenly increase by 40 percent. What would you check first?",
-    guidance: ["Look for usage changes by service.", "Separate expected growth from waste.", "Suggest immediate controls and longer-term governance."],
+    question:
+      "Cloud costs suddenly increase by 40 percent. What would you check first?",
+    guidance: [
+      "Look for usage changes by service.",
+      "Separate expected growth from waste.",
+      "Suggest immediate controls and longer-term governance.",
+    ],
     expectedStructure: "XYZ",
   },
   {
@@ -250,7 +319,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "hr",
     difficulty: "beginner",
     question: "How do you keep your cloud skills current?",
-    guidance: ["Mention practical learning habits.", "Connect learning to real projects.", "Avoid claiming expertise without evidence."],
+    guidance: [
+      "Mention practical learning habits.",
+      "Connect learning to real projects.",
+      "Avoid claiming expertise without evidence.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -259,7 +332,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "behavioral",
     difficulty: "beginner",
     question: "Tell me about a manual process you automated.",
-    guidance: ["Describe the repeated pain point.", "Explain the automation you built.", "Quantify time saved or errors reduced if possible."],
+    guidance: [
+      "Describe the repeated pain point.",
+      "Explain the automation you built.",
+      "Quantify time saved or errors reduced if possible.",
+    ],
     expectedStructure: "STAR",
   },
   {
@@ -268,7 +345,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "technical",
     difficulty: "intermediate",
     question: "What should a healthy CI/CD pipeline include?",
-    guidance: ["Cover build, test, security, and deployment stages.", "Mention rollback or recovery.", "Explain how pipeline feedback helps developers."],
+    guidance: [
+      "Cover build, test, security, and deployment stages.",
+      "Mention rollback or recovery.",
+      "Explain how pipeline feedback helps developers.",
+    ],
     expectedStructure: "freeform",
   },
   {
@@ -276,8 +357,13 @@ export const interviewQuestions: InterviewQuestion[] = [
     roleId: "devops-engineer",
     category: "case",
     difficulty: "advanced",
-    question: "A deployment fails halfway through release. How would you respond?",
-    guidance: ["Protect users and service health first.", "Use logs and deployment history to isolate cause.", "Describe rollback, communication, and follow-up fixes."],
+    question:
+      "A deployment fails halfway through release. How would you respond?",
+    guidance: [
+      "Protect users and service health first.",
+      "Use logs and deployment history to isolate cause.",
+      "Describe rollback, communication, and follow-up fixes.",
+    ],
     expectedStructure: "XYZ",
   },
   {
@@ -286,7 +372,11 @@ export const interviewQuestions: InterviewQuestion[] = [
     category: "hr",
     difficulty: "beginner",
     question: "How do you work with developers to improve reliability?",
-    guidance: ["Show partnership rather than gatekeeping.", "Give examples of shared standards or tooling.", "Explain how you balance speed and stability."],
+    guidance: [
+      "Show partnership rather than gatekeeping.",
+      "Give examples of shared standards or tooling.",
+      "Explain how you balance speed and stability.",
+    ],
     expectedStructure: "freeform",
   },
 ];
