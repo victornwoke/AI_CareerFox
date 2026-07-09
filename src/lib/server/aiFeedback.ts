@@ -93,6 +93,8 @@ export type CvFeedbackOutput = {
     atsReadability: number;
     roleAlignment: number;
   };
+  /** True when the result was produced by the local offline fallback rather than the AI provider. */
+  isAiFallback?: true;
 };
 
 export type GeneratePracticeQuestionInput = {
@@ -1176,7 +1178,13 @@ export async function createCvFeedback(
 
   // When text extraction fails but we have the raw file, send it directly
   // to Gemini as inline data — Gemini reads PDFs and DOCX natively.
-  const inlineFiles: { data: string; mimeType: string }[] = [];
+  const cvInlineFile: { data: string; mimeType: string } | null =
+    !resolvedCvText && input.cvFile
+      ? {
+          data: input.cvFile.base64.replace(/^data:[^;]+;base64,/, ""),
+          mimeType: input.cvFile.mimeType ?? "application/pdf",
+        }
+      : null;
 
   if (!resolvedCvText) {
     if (!input.cvFile) {
@@ -1185,10 +1193,6 @@ export async function createCvFeedback(
         422,
       );
     }
-    inlineFiles.push({
-      data: input.cvFile.base64.replace(/^data:[^;]+;base64,/, ""),
-      mimeType: input.cvFile.mimeType ?? "application/pdf",
-    });
   }
 
   const resolvedJobDescription = input.jobDescription?.trim()
@@ -1197,12 +1201,20 @@ export async function createCvFeedback(
       ? await extractTextFromUploadedFile(input.jobDescriptionFile)
       : undefined;
 
-  if (!resolvedJobDescription && input.jobDescriptionFile) {
-    inlineFiles.push({
-      data: input.jobDescriptionFile.base64.replace(/^data:[^;]+;base64,/, ""),
-      mimeType: input.jobDescriptionFile.mimeType ?? "application/pdf",
-    });
-  }
+  const jdInlineFile: { data: string; mimeType: string } | null =
+    !resolvedJobDescription && input.jobDescriptionFile
+      ? {
+          data: input.jobDescriptionFile.base64.replace(
+            /^data:[^;]+;base64,/,
+            "",
+          ),
+          mimeType: input.jobDescriptionFile.mimeType ?? "application/pdf",
+        }
+      : null;
+
+  const inlineFiles = [cvInlineFile, jdInlineFile].filter(
+    (file): file is { data: string; mimeType: string } => file !== null,
+  );
 
   const resolvedInput: ResolvedCvFeedbackInput = {
     ...input,
@@ -1247,19 +1259,38 @@ export async function createCvFeedback(
 
     return normalizeCvFeedback(response);
   } catch (error) {
+    let finalError: unknown = error;
+
+    // If the optional JD inline file appears to be causing provider issues,
+    // retry once with CV-only context so analysis still succeeds.
+    if (jdInlineFile) {
+      try {
+        const retryInlineFiles = cvInlineFile ? [cvInlineFile] : undefined;
+        const retryResponse = await fetchGeminiStructuredJson(
+          prompt,
+          cvFeedbackSchema,
+          retryInlineFiles,
+        );
+
+        return normalizeCvFeedback(retryResponse);
+      } catch (retryError) {
+        finalError = retryError;
+      }
+    }
+
     // For rate limit (429), allow fallback even for uploads since it's temporary.
     // For other errors (502/504), only allow fallback for text-based CVs.
-    if (shouldUseLocalAiFallback(error)) {
+    if (shouldUseLocalAiFallback(finalError)) {
       // 429 is temporary; safe to use local fallback for any CV.
       // 502/504 are server errors; for uploads, we don't have the full document text,
       // so fake analysis is worse than an error.
-      const status = (error as { status?: number }).status;
+      const status = (finalError as { status?: number }).status;
       if (status === 429 || inlineFiles.length === 0) {
         return createLocalCvFeedback(resolvedInput);
       }
     }
 
-    throw error;
+    throw finalError;
   }
 }
 
@@ -1573,6 +1604,7 @@ function createLocalCvFeedback(
       (bullet) =>
         `Refine: ${bullet} — include your ownership, scope, and one measurable outcome (add a real metric if accurate).`,
     ),
+    isAiFallback: true as const,
     keywordGaps,
     nextActions: [
       "Rewrite your top three bullets with action + scope + measurable result.",

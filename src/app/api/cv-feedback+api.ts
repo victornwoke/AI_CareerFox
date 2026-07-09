@@ -1,11 +1,11 @@
 import {
-  createCvFeedback,
-  enforceAiQuota,
-  handleAiRouteError,
-  jsonResponse,
-  readJsonBody,
-  validateCvFeedbackInput,
-  validateRequestSize,
+    createCvFeedback,
+    enforceAiQuota,
+    handleAiRouteError,
+    jsonResponse,
+    readJsonBody,
+    validateCvFeedbackInput,
+    validateRequestSize,
 } from "@/lib/server/aiFeedback";
 
 export async function POST(request: Request) {
@@ -13,6 +13,12 @@ export async function POST(request: Request) {
 
   if (!sizeValidation.ok) {
     return jsonResponse({ error: sizeValidation.error }, { status: 413 });
+  }
+
+  const quotaResponse = enforceAiQuota(request);
+
+  if (quotaResponse) {
+    return quotaResponse;
   }
 
   const jsonBody = await readJsonBody(request);
@@ -25,12 +31,6 @@ export async function POST(request: Request) {
 
   if (!validation.ok) {
     return jsonResponse({ error: validation.error }, { status: 400 });
-  }
-
-  const quotaResponse = enforceAiQuota(request);
-
-  if (quotaResponse) {
-    return quotaResponse;
   }
 
   try {

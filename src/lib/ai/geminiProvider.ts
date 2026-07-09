@@ -5,8 +5,12 @@ import {
 import { AiProviderError } from "@/lib/ai/providerErrors";
 
 const geminiApiBaseUrl = "https://generativelanguage.googleapis.com/v1beta";
-const defaultModel = "gemini-2.5-flash";
-const fallbackModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+const defaultModel = "gemini-2.5-flash-lite";
+const fallbackModels = [
+  "gemini-2.5-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash-lite",
+];
 const defaultTimeoutMs = 60_000;
 const maxAiResponseBytes = 14_000;
 
@@ -130,6 +134,11 @@ async function fetchGeminiStructuredJson({
 }
 
 function shouldTryFallbackModel(status: number, message: string): boolean {
+  // Retry on quota exhaustion or temporary unavailability — try the next model.
+  if (status === 429 || status === 503) {
+    return true;
+  }
+
   if (status !== 400 && status !== 404) {
     return false;
   }
@@ -213,7 +222,11 @@ function getThinkingConfig(model: string): Record<string, unknown> {
     };
   }
 
-  if (normalizedModel.includes("gemini-2.5-flash")) {
+  // Lite models do not support thinkingConfig — only apply to the full flash variant.
+  if (
+    normalizedModel.includes("gemini-2.5-flash") &&
+    !normalizedModel.includes("lite")
+  ) {
     return {
       thinkingConfig: {
         thinkingBudget: 0,
