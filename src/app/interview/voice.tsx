@@ -427,6 +427,7 @@ export default function VoicePracticeScreen() {
         answer: trimmedAnswer,
         category: activeQuestion.category,
         experienceLevel: experienceLabel,
+        jobDescription: latestJobDescription ?? undefined,
         question: activeQuestion.question,
         targetRole: roleTitle,
         userId,
@@ -587,6 +588,12 @@ export default function VoicePracticeScreen() {
       streamConnectionState === "connecting" ||
       streamConnectionState === "connected"
     ) {
+      return;
+    }
+
+    if (!voiceCoachAvailable) {
+      setShowNotes(true);
+      setSessionError(voiceFallbackMessage);
       return;
     }
 
@@ -870,6 +877,7 @@ export default function VoicePracticeScreen() {
             accessibilityRole="button"
             className="h-[52px] flex-1 items-center justify-center rounded-[18px] bg-[#7A68FF]"
             disabled={
+              !voiceCoachAvailable ||
               streamConnectionState === "creating" ||
               streamConnectionState === "connecting" ||
               streamConnectionState === "connected"
@@ -879,6 +887,7 @@ export default function VoicePracticeScreen() {
             }}
             style={{
               opacity:
+                !voiceCoachAvailable ||
                 streamConnectionState === "creating" ||
                 streamConnectionState === "connecting" ||
                 streamConnectionState === "connected"

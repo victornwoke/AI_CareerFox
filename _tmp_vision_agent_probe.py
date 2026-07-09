@@ -19,12 +19,14 @@ context = extract_session_context({
     }
 })
 
+import os
+
 config = ServiceConfig(
-    stream_api_key='stream-test-key',
-    stream_api_secret='stream-test-secret',
-    gemini_api_key='gemini-test-key',
-    google_api_key='',
-    gemini_model='gemini-2.5-flash',
+    stream_api_key=os.getenv('STREAM_API_KEY', 'stream-test-key'),
+    stream_api_secret=os.getenv('STREAM_API_SECRET', 'stream-test-secret'),
+    gemini_api_key=os.getenv('GEMINI_API_KEY', 'gemini-test-key'),
+    google_api_key=os.getenv('GOOGLE_API_KEY', ''),
+    gemini_model=os.getenv('GEMINI_MODEL', 'gemini-2.5-flash'),
 )
 agent = create_agent(context, config)
 assert agent is not None

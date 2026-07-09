@@ -3,12 +3,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    Text,
-    useWindowDimensions,
-    View,
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -247,8 +247,7 @@ export default function CvResultsScreen() {
     ? "error"
     : status;
   const displayError = preconditionError ?? error;
-  const isPreconditionError =
-    Boolean(preconditionError) || displayError?.includes("Add your CV");
+  const isPreconditionError = Boolean(preconditionError);
 
   if (!request) {
     return (

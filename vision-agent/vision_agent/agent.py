@@ -305,6 +305,17 @@ def create_agent(context: CoachSessionContext, config: ServiceConfig) -> Agent:
     )
 
 
+_FALLBACK_USER_ID = "anonymous"
+_FALLBACK_TARGET_ROLE = "general role"
+_FALLBACK_EXPERIENCE_LEVEL = "unspecified"
+_FALLBACK_PRACTICE_MODE = "mock_interview"
+
+
+def _coalesce(call_value: str, base_value: str, fallback: str) -> str:
+    """Return call_value unless it equals the fallback sentinel; keep base_value then."""
+    return call_value if call_value != fallback else base_value
+
+
 def _merge_context_from_stream_call(
     base_context: CoachSessionContext,
     call_custom_data: object,
@@ -316,14 +327,14 @@ def _merge_context_from_stream_call(
     flattened = _flatten_custom_data(call_custom_data)
 
     return CoachSessionContext(
-        user_id=call_context.user_id,
-        target_role=call_context.target_role,
-        experience_level=call_context.experience_level,
-        practice_mode=call_context.practice_mode,
-        question_category=call_context.question_category,
-        current_question=call_context.current_question,
-        job_description=call_context.job_description,
-        selected_career_path=call_context.selected_career_path,
+        user_id=_coalesce(call_context.user_id, base_context.user_id, _FALLBACK_USER_ID),
+        target_role=_coalesce(call_context.target_role, base_context.target_role, _FALLBACK_TARGET_ROLE),
+        experience_level=_coalesce(call_context.experience_level, base_context.experience_level, _FALLBACK_EXPERIENCE_LEVEL),
+        practice_mode=_coalesce(call_context.practice_mode, base_context.practice_mode, _FALLBACK_PRACTICE_MODE),
+        question_category=call_context.question_category if call_context.question_category is not None else base_context.question_category,
+        current_question=call_context.current_question if call_context.current_question is not None else base_context.current_question,
+        job_description=call_context.job_description if call_context.job_description is not None else base_context.job_description,
+        selected_career_path=call_context.selected_career_path if call_context.selected_career_path is not None else base_context.selected_career_path,
         raw_custom_data={**base_context.raw_custom_data, **flattened},
     )
 
@@ -338,9 +349,10 @@ async def run_session(session: SessionRuntime, registry: SessionRegistry) -> Non
         logger.error("CareerFox voice coach cannot start: missing %s", message)
         return
 
-    agent = create_agent(session.context, config)
+    agent = None
 
     try:
+        agent = create_agent(session.context, config)
         call = await agent.create_call(session.call_type, session.call_id)
 
         # Read call-level custom metadata that mobile clients attach on join/create.
@@ -398,6 +410,11 @@ async def run_session(session: SessionRuntime, registry: SessionRegistry) -> Non
                 return_when=asyncio.FIRST_COMPLETED,
             )
 
+            if finish_task in done:
+                finish_exc = finish_task.exception()
+                if finish_exc is not None:
+                    raise finish_exc
+
             if stop_task in done and not finish_task.done():
                 logger.info("Stop requested for session %s", session.session_id)
                 close_method = getattr(agent, "close", None)
@@ -415,8 +432,9 @@ async def run_session(session: SessionRuntime, registry: SessionRegistry) -> Non
         await registry.update_status(session.session_id, "failed", str(exc))
         raise
     finally:
-        if hasattr(agent, "close"):
+        if agent is not None and hasattr(agent, "close"):
             try:
                 await agent.close()
             except Exception:
                 logger.exception("Failed to close agent for session %s", session.session_id)
+        await registry.remove(session.session_id)

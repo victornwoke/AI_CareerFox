@@ -25,28 +25,16 @@ def _verify_control_request(shared_secret_header: str | None) -> None:
     if not configured_secret:
         return
 
-    if os.environ.get("NODE_ENV", "development").strip().lower() != "production":
-        return
-
     provided_secret = (shared_secret_header or "").strip()
 
     if not provided_secret or not hmac.compare_digest(provided_secret, configured_secret):
         raise HTTPException(status_code=401, detail="Unauthorized voice agent control request.")
 
 
-def _is_local_request(request: Request) -> bool:
-    client_host = getattr(request.client, "host", None)
-
-    return client_host in {"127.0.0.1", "::1", "localhost"}
-
-
 def _verify_control_request_with_request(
     request: Request,
     shared_secret_header: str | None,
 ) -> None:
-    if _is_local_request(request) and not (shared_secret_header or "").strip():
-        return
-
     _verify_control_request(shared_secret_header)
 
 

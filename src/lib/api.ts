@@ -87,6 +87,8 @@ export function resolveApiBaseUrl(): string {
   return "";
 }
 
+const REQUEST_TIMEOUT_MS = 30_000;
+
 async function postJson<TRequest, TResponse>(
   path: string,
   request: TRequest,
@@ -100,6 +102,8 @@ async function postJson<TRequest, TResponse>(
     );
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let response: Response;
 
   try {
@@ -107,9 +111,12 @@ async function postJson<TRequest, TResponse>(
       body: JSON.stringify(request),
       headers: { "Content-Type": "application/json" },
       method: "POST",
+      signal: controller.signal,
     });
   } catch {
     throw new Error("CareerFox could not reach the analysis service.");
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   if (!response.ok) {

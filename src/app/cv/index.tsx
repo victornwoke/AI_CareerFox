@@ -1,7 +1,7 @@
 import { readAsStringAsync } from "expo-file-system/legacy";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
     Pressable,
     ScrollView,
@@ -180,6 +180,9 @@ export default function CvScreen() {
     [selectedCvRoleId],
   );
 
+  const activeCvUploadRef = useRef<string | null>(null);
+  const activeJdUploadRef = useRef<string | null>(null);
+
   const pickDocument = async (kind: UploadKind) => {
     setUploadError(null);
 
@@ -217,6 +220,7 @@ export default function CvScreen() {
         });
         setCvFileText(uploadedDocument.text);
         setCvFileUnsupported(false);
+        activeCvUploadRef.current = uploadedDocument.name;
 
         if (!uploadedDocument.text) {
           void extractUploadedDocumentText({
@@ -224,8 +228,14 @@ export default function CvScreen() {
             mimeType: uploadedDocument.mimeType,
             name: uploadedDocument.name,
           }).then((serverText) => {
+            if (activeCvUploadRef.current !== uploadedDocument.name) {
+              return;
+            }
+
             if (serverText) {
               setCvFileText(serverText);
+            } else {
+              setCvFileUnsupported(true);
             }
           });
         }
@@ -242,6 +252,7 @@ export default function CvScreen() {
       });
       setJobDescriptionFileText(uploadedDocument.text);
       setJobDescriptionFileUnsupported(false);
+      activeJdUploadRef.current = uploadedDocument.name;
 
       if (!uploadedDocument.text) {
         void extractUploadedDocumentText({
@@ -249,8 +260,14 @@ export default function CvScreen() {
           mimeType: uploadedDocument.mimeType,
           name: uploadedDocument.name,
         }).then((serverText) => {
+          if (activeJdUploadRef.current !== uploadedDocument.name) {
+            return;
+          }
+
           if (serverText) {
             setJobDescriptionFileText(serverText);
+          } else {
+            setJobDescriptionFileUnsupported(true);
           }
         });
       }

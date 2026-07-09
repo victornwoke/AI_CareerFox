@@ -1,6 +1,6 @@
 import { useAuth } from "@clerk/expo";
 import { type Href, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Pressable,
@@ -165,6 +165,8 @@ export default function LearnScreen() {
     (level) => level.id === selectedExperienceLevelId,
   );
 
+  const learningPlanCallRef = useRef(0);
+
   const generateLearningPlan = useCallback(async () => {
     if (!userId || !selectedRole || !selectedExperienceLevel) {
       setLearningPlan(null);
@@ -176,6 +178,8 @@ export default function LearnScreen() {
     setLearningPlanStatus("loading");
     setLearningPlanError(null);
 
+    const callId = ++learningPlanCallRef.current;
+
     try {
       const result = await postGenerateRoleLearningPlan({
         experienceLevel: selectedExperienceLevel.label,
@@ -184,9 +188,16 @@ export default function LearnScreen() {
         userId,
       });
 
+      if (callId !== learningPlanCallRef.current) {
+        return;
+      }
+
       setLearningPlan(result);
       setLearningPlanStatus("success");
     } catch (caughtError) {
+      if (callId !== learningPlanCallRef.current) {
+        return;
+      }
       setLearningPlanStatus("error");
       setLearningPlanError(
         caughtError instanceof Error
