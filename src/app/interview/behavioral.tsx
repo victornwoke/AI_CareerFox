@@ -6,9 +6,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SymbolIcon, type SymbolIconName } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
+import { targetRoles } from "@/data/roles";
+import { getEstimatedMinutesForDifficulty } from "@/lib/interviewGeneratedQuestion";
 import {
-  getActiveBehavioralLesson,
-  getBehavioralLessons,
+    type BehavioralLesson,
+    getActiveBehavioralLesson,
+    getBehavioralLessons,
 } from "@/lib/interviewLessonFlow";
 import { useCareerStore } from "@/store/useCareerStore";
 import { useInterviewStore } from "@/store/useInterviewStore";
@@ -59,13 +62,55 @@ export default function BehavioralInterviewScreen() {
   const completedQuestionIds = useInterviewStore(
     (state) => state.completedQuestionIds,
   );
+  const generatedPracticeQuestion = useInterviewStore(
+    (state) => state.generatedPracticeQuestion,
+  );
   const setActiveQuestionId = useInterviewStore(
     (state) => state.setActiveQuestionId,
   );
-  const lessons = useMemo(
-    () => getBehavioralLessons(selectedTargetRoleId),
+  const selectedRoleTitle = useMemo(
+    () =>
+      selectedTargetRoleId
+        ? (targetRoles.find((role) => role.id === selectedTargetRoleId)
+            ?.title ?? "Career")
+        : "Career",
     [selectedTargetRoleId],
   );
+  const lessons = useMemo(() => {
+    const baseLessons = getBehavioralLessons(selectedTargetRoleId);
+
+    if (!generatedPracticeQuestion) {
+      return baseLessons;
+    }
+
+    const generated = generatedPracticeQuestion.question;
+
+    if (generated.category !== "behavioral") {
+      return baseLessons;
+    }
+
+    const generatedLesson: BehavioralLesson = {
+      category: "behavioral",
+      difficulty: generated.difficulty,
+      expectedStructure: generated.expectedStructure,
+      guidance: generated.answerTips,
+      id: generatedPracticeQuestion.id,
+      lessonNumber: 1,
+      question: generated.question,
+      roleId: selectedTargetRoleId ?? "generated",
+      roleTitle: selectedRoleTitle,
+      tags: [
+        generated.expectedStructure,
+        generated.difficulty,
+        `${getEstimatedMinutesForDifficulty(generated.difficulty)} min`,
+      ],
+    };
+
+    return [generatedLesson, ...baseLessons].map((lesson, index) => ({
+      ...lesson,
+      lessonNumber: index + 1,
+    }));
+  }, [generatedPracticeQuestion, selectedRoleTitle, selectedTargetRoleId]);
   const activeLesson = getActiveBehavioralLesson({
     activeQuestionId,
     completedQuestionIds,

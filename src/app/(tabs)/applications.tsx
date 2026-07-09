@@ -1,15 +1,21 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useMemo } from "react";
-import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import {
+    Pressable,
+    ScrollView,
+    Text,
+    useWindowDimensions,
+    View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SymbolIcon, type SymbolIconName } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import {
-  type ApplicationStatus,
-  type JobApplication,
-  useApplicationStore,
+    type ApplicationStatus,
+    type JobApplication,
+    useApplicationStore,
 } from "@/store/useApplicationStore";
 
 const newApplicationHref = "/applications/new" as Href;
@@ -198,8 +204,9 @@ export default function ApplicationsScreen() {
   const counts = useMemo(
     () => ({
       applied: applications.filter((item) => item.status === "applied").length,
-      interviewing: applications.filter((item) => item.status === "interviewing")
-        .length,
+      interviewing: applications.filter(
+        (item) => item.status === "interviewing",
+      ).length,
       offer: applications.filter((item) => item.status === "offer").length,
       saved: applications.filter((item) => item.status === "saved").length,
     }),
@@ -330,7 +337,8 @@ export default function ApplicationsScreen() {
                 No applications yet
               </Text>
               <Text className="mt-3 text-center text-[14px] font-semibold leading-[21px] text-[#8F92A8]">
-                Add jobs you have saved or applied for, then track deadlines and next follow-up actions here.
+                Add jobs you have saved or applied for, then track deadlines and
+                next follow-up actions here.
               </Text>
               <Pressable
                 accessibilityLabel="Add your first application"

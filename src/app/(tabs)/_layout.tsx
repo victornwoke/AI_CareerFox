@@ -1,7 +1,13 @@
 import { useAuth } from "@clerk/expo";
 import { Redirect, Tabs, type Href } from "expo-router";
 import type { BottomTabBarProps } from "expo-router/tabs";
-import { Pressable, Text, type ColorValue, View } from "react-native";
+import {
+    Pressable,
+    Text,
+    useWindowDimensions,
+    View,
+    type ColorValue,
+} from "react-native";
 
 import { SymbolIcon, type SymbolIconName } from "@/components/ui/SymbolIcon";
 import { colors } from "@/constants/colors";
@@ -18,14 +24,30 @@ function CareerFoxTabBar({
   navigation,
   state,
 }: BottomTabBarProps) {
+  const { height, width } = useWindowDimensions();
+  const isCompact = width < 360 || height < 740;
+  const isTablet = width >= 768;
+  const tabBarHeight = isCompact ? 84 : 92;
+  const tabItemHeight = isCompact ? 72 : 78;
+  const iconWrapSize = isCompact ? 46 : 50;
+  const tabBarMaxWidth = isTablet ? 620 : undefined;
+
   return (
     <View
       className="bg-transparent px-5 pt-2"
-      style={{ paddingBottom: Math.max(insets.bottom, 10) }}
+      style={{
+        paddingBottom: Math.max(insets.bottom, 10),
+      }}
     >
       <View
-        className="h-[92px] flex-row items-center rounded-full border border-[#EEE7FF] bg-white px-2"
-        style={{ boxShadow: "0 -8px 28px rgba(13, 19, 43, 0.10)" }}
+        className="flex-row items-center rounded-full border border-[#EEE7FF] bg-white px-2"
+        style={{
+          alignSelf: "center",
+          boxShadow: "0 -8px 28px rgba(13, 19, 43, 0.10)",
+          height: tabBarHeight,
+          maxWidth: tabBarMaxWidth,
+          width: "100%",
+        }}
       >
         {state.routes.map((route, index) => {
           const isFocused = state.index === index;
@@ -37,7 +59,7 @@ function CareerFoxTabBar({
           const label =
             typeof options.tabBarLabel === "string"
               ? options.tabBarLabel
-              : options.title ?? route.name;
+              : (options.title ?? route.name);
           const color = isFocused ? colors.primary : "#8F92A8";
           const icon = options.tabBarIcon?.({
             color: isFocused ? colors.white : "#8F92A8",
@@ -69,16 +91,19 @@ function CareerFoxTabBar({
               accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
               accessibilityRole="tab"
               accessibilityState={{ selected: isFocused }}
-              className="h-[78px] flex-1 items-center justify-center"
+              className="flex-1 items-center justify-center"
               key={route.key}
               onLongPress={handleLongPress}
               onPress={handlePress}
+              style={{ height: tabItemHeight }}
               testID={options.tabBarButtonTestID}
             >
               <View
-                className="h-[50px] w-[50px] items-center justify-center rounded-full"
+                className="items-center justify-center rounded-full"
                 style={{
                   backgroundColor: isFocused ? colors.primary : "transparent",
+                  height: iconWrapSize,
+                  width: iconWrapSize,
                 }}
               >
                 {icon}
@@ -129,7 +154,10 @@ const tabIconNames = {
     focused: "rosette",
     unfocused: "rosette",
   },
-} satisfies Record<string, { focused: SymbolIconName; unfocused: SymbolIconName }>;
+} satisfies Record<
+  string,
+  { focused: SymbolIconName; unfocused: SymbolIconName }
+>;
 
 type TabIconProps = {
   color: ColorValue;

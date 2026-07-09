@@ -4,12 +4,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useMemo } from "react";
 import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  useWindowDimensions,
-  View,
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    Text,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -251,7 +251,9 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { isLoaded, user } = useUser();
   const { width } = useWindowDimensions();
-  const selectedTargetRole = useCareerStore((state) => state.selectedTargetRole);
+  const selectedTargetRole = useCareerStore(
+    (state) => state.selectedTargetRole,
+  );
   const completedMissionIds = useProgressStore(
     (state) => state.completedMissionIds,
   );
@@ -284,18 +286,22 @@ export default function HomeScreen() {
   const recentActivities = careerMissions
     .filter((mission) => completedMissionIds.includes(mission.id))
     .slice(0, 2)
-    .map((mission, index): RecentActivity => ({
-      accent: index === 0 ? colors.success : colors.primary,
-      background: index === 0 ? "#E9F9F0" : "#EEE9FF",
-      detail: `${mission.category} • ${mission.xp} XP reward`,
-      title: mission.title,
-    }));
+    .map(
+      (mission, index): RecentActivity => ({
+        accent: index === 0 ? colors.success : colors.primary,
+        background: index === 0 ? "#E9F9F0" : "#EEE9FF",
+        detail: `${mission.category} • ${mission.xp} XP reward`,
+        title: mission.title,
+      }),
+    );
   const completedPlanIds = new Set<PlanTaskId>(
     careerMissions
       .filter((mission) => completedMissionIds.includes(mission.id))
       .map(getPlanTaskId),
   );
-  const selectedRole = targetRoles.find((role) => role.id === selectedTargetRole);
+  const selectedRole = targetRoles.find(
+    (role) => role.id === selectedTargetRole,
+  );
   const nextMission =
     careerMissions.find(
       (mission) =>
@@ -463,7 +469,8 @@ export default function HomeScreen() {
                       {dailyMission.title}
                     </Text>
                     <Text className="mt-1 text-[13px] font-bold leading-[17px] text-white/86">
-                      +{dailyMission.xp} XP • {completedCount}/{totalMissions} missions
+                      +{dailyMission.xp} XP • {completedCount}/{totalMissions}{" "}
+                      missions
                     </Text>
                   </View>
 
@@ -485,7 +492,10 @@ export default function HomeScreen() {
                 </View>
                 <View className="mt-3 flex-row items-center gap-3">
                   <View className="flex-1">
-                    <ProgressBar color={colors.white} progress={currentMissionProgress} />
+                    <ProgressBar
+                      color={colors.white}
+                      progress={currentMissionProgress}
+                    />
                   </View>
                   <Text className="text-[11px] font-bold leading-[15px] text-white/80">
                     {currentMissionProgress}%
@@ -499,7 +509,9 @@ export default function HomeScreen() {
               style={{ boxShadow: "0 12px 28px rgba(13, 19, 43, 0.08)" }}
             >
               <Text className="text-[18px] font-bold leading-[24px] text-text-primary">
-                {totalMissions > 0 ? "Daily missions complete" : "No missions yet"}
+                {totalMissions > 0
+                  ? "Daily missions complete"
+                  : "No missions yet"}
               </Text>
               <Text className="mt-1 text-[13px] font-semibold leading-[19px] text-[#8F92A8]">
                 {totalMissions > 0
@@ -621,7 +633,9 @@ export default function HomeScreen() {
                     <View
                       className="h-7 w-7 items-center justify-center rounded-full border-[2px]"
                       style={{
-                        backgroundColor: isComplete ? colors.success : colors.white,
+                        backgroundColor: isComplete
+                          ? colors.success
+                          : colors.white,
                         borderColor: isComplete ? colors.success : "#E4DDFB",
                       }}
                     >

@@ -1,12 +1,14 @@
+import { useAuth } from "@clerk/expo";
 import { type Href, useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  useWindowDimensions,
-  View,
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -14,28 +16,40 @@ import { SymbolIcon } from "@/components/ui/SymbolIcon";
 import { colors } from "@/constants/colors";
 import { experienceLevels } from "@/data/experienceLevels";
 import {
-  interviewQuestionBankCounts,
-  learningCategories,
+    interviewQuestionBankCounts,
+    learningCategories,
 } from "@/data/interviewCategories";
 import { interviewQuestions } from "@/data/interviewQuestions";
 import { careerMissions } from "@/data/missions";
 import { targetRoles } from "@/data/roles";
-import { useInterviewStore } from "@/store/useInterviewStore";
+import { postGenerateRoleLearningPlan } from "@/lib/api";
+import type { GenerateRoleLearningPlanOutput } from "@/lib/server/aiFeedback";
 import { useCareerStore } from "@/store/useCareerStore";
+import { useCvAnalysisStore } from "@/store/useCvAnalysisStore";
+import { useInterviewStore } from "@/store/useInterviewStore";
 import { useProgressStore } from "@/store/useProgressStore";
 import type {
-  CareerMission,
-  InterviewCategory,
-  InterviewQuestion,
-  LearningCategory,
-  TargetRole,
+    CareerMission,
+    InterviewCategory,
+    InterviewQuestion,
+    LearningCategory,
+    TargetRole,
 } from "@/types/career";
 
 const cvHref = "/cv" as Href;
 const interviewHref = "/interview" as Href;
 const learnScreenCategories = learningCategories.filter(
-  (category) => category.id !== "job-search",
+  (category) =>
+    category.id !== "job-search" &&
+    category.id !== "hr-interviews" &&
+    category.id !== "case-interviews",
 );
+
+type ActiveInterviewCategory = Extract<
+  InterviewCategory,
+  "behavioral" | "technical"
+>;
+
 const allDifficulties: InterviewQuestion["difficulty"][] = [
   "beginner",
   "intermediate",
@@ -63,13 +77,7 @@ type LearningCategoryCard = LearningCategory & {
   progressStatus: CategoryProgress | null;
 };
 
-function ProgressBar({
-  color,
-  progress,
-}: {
-  color: string;
-  progress: number;
-}) {
+function ProgressBar({ color, progress }: { color: string; progress: number }) {
   const clampedProgress = Math.max(0, Math.min(100, progress));
 
   return (
@@ -118,19 +126,33 @@ function getQuestionBankCount({
 }
 
 export default function LearnScreen() {
+  const { userId } = useAuth();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const [searchQuery, setSearchQuery] = useState("");
+  const [learningPlan, setLearningPlan] =
+    useState<GenerateRoleLearningPlanOutput | null>(null);
+  const [learningPlanStatus, setLearningPlanStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [learningPlanError, setLearningPlanError] = useState<string | null>(
+    null,
+  );
   const selectedExperienceLevelId = useCareerStore(
     (state) => state.selectedExperienceLevel,
   );
-  const selectedTargetRoleId = useCareerStore((state) => state.selectedTargetRole);
+  const selectedTargetRoleId = useCareerStore(
+    (state) => state.selectedTargetRole,
+  );
   const completedMissionIds = useProgressStore(
     (state) => state.completedMissionIds,
   );
   const completedQuestionIds = useInterviewStore(
     (state) => state.completedQuestionIds,
+  );
+  const latestJobDescription = useCvAnalysisStore(
+    (state) => state.request?.jobDescription,
   );
   const isNarrow = width < 370;
   const horizontalPadding = isNarrow ? 20 : 24;
@@ -142,6 +164,47 @@ export default function LearnScreen() {
   const selectedExperienceLevel = experienceLevels.find(
     (level) => level.id === selectedExperienceLevelId,
   );
+
+  const generateLearningPlan = useCallback(async () => {
+    if (!userId || !selectedRole || !selectedExperienceLevel) {
+      setLearningPlan(null);
+      setLearningPlanStatus("idle");
+      setLearningPlanError(null);
+      return;
+    }
+
+    setLearningPlanStatus("loading");
+    setLearningPlanError(null);
+
+    try {
+      const result = await postGenerateRoleLearningPlan({
+        experienceLevel: selectedExperienceLevel.label,
+        jobDescription: latestJobDescription,
+        targetRole: selectedRole.title,
+        userId,
+      });
+
+      setLearningPlan(result);
+      setLearningPlanStatus("success");
+    } catch (caughtError) {
+      setLearningPlanStatus("error");
+      setLearningPlanError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "CareerFox could not generate your learning plan right now.",
+      );
+    }
+  }, [latestJobDescription, selectedExperienceLevel, selectedRole, userId]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      void generateLearningPlan();
+    }, 0);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [generateLearningPlan]);
   const allowedDifficulties =
     selectedExperienceLevelId === null
       ? allDifficulties
@@ -175,35 +238,23 @@ export default function LearnScreen() {
         experienceLevelId: selectedExperienceLevelId,
         roleCategory,
       }),
-      case: getQuestionBankCount({
-        category: "case",
-        experienceLevelId: selectedExperienceLevelId,
-        roleCategory,
-      }),
-      hr: getQuestionBankCount({
-        category: "hr",
-        experienceLevelId: selectedExperienceLevelId,
-        roleCategory,
-      }),
       technical: getQuestionBankCount({
         category: "technical",
         experienceLevelId: selectedExperienceLevelId,
         roleCategory,
       }),
-    } satisfies Record<InterviewCategory["id"], number>;
+    } satisfies Record<ActiveInterviewCategory, number>;
   }, [selectedExperienceLevelId, selectedRole?.category]);
   const totalInterviewBankCount = Object.values(bankCounts).reduce(
     (total, count) => total + count,
     0,
   );
   const getProgressForQuestions = useCallback(
-    (
-      category: InterviewCategory["id"],
-      total: number,
-    ): CategoryProgress => {
+    (category: InterviewCategory["id"], total: number): CategoryProgress => {
       const completed = roleQuestions.filter(
         (question) =>
-          question.category === category && completedQuestionIdSet.has(question.id),
+          question.category === category &&
+          completedQuestionIdSet.has(question.id),
       ).length;
 
       return {
@@ -241,41 +292,73 @@ export default function LearnScreen() {
       "behavioral",
       bankCounts.behavioral,
     );
-    const caseProgress = getProgressForQuestions("case", bankCounts.case);
-    const hrProgress = getProgressForQuestions("hr", bankCounts.hr);
     const technicalProgress = getProgressForQuestions(
       "technical",
       bankCounts.technical,
     );
     const completedInterviewQuestions =
-      behavioralProgress.completed +
-      caseProgress.completed +
-      hrProgress.completed +
-      technicalProgress.completed;
+      behavioralProgress.completed + technicalProgress.completed;
     const interviewQuestionProgress = {
       completed: completedInterviewQuestions,
       progress:
         totalInterviewBankCount === 0
           ? 0
-          : Math.round((completedInterviewQuestions / totalInterviewBankCount) * 100),
+          : Math.round(
+              (completedInterviewQuestions / totalInterviewBankCount) * 100,
+            ),
       total: totalInterviewBankCount,
     };
+    const planModules = learningPlan?.modules ?? [];
+    const learnModules = planModules.filter(
+      (module) => module.type === "learn",
+    );
+    const cvModules = planModules.filter((module) => module.type === "cv");
+    const interviewModules = planModules.filter(
+      (module) =>
+        module.type === "practice" || module.type === "mock_interview",
+    );
+    const totalPlanMinutes = planModules.reduce(
+      (sum, module) => sum + module.estimatedMinutes,
+      0,
+    );
 
     return learnScreenCategories.map((category) => {
       if (category.id === "interview-practice") {
+        const interviewModuleMinutes = interviewModules.reduce(
+          (sum, module) => sum + module.estimatedMinutes,
+          0,
+        );
+
         return {
           ...category,
-          countLabel: `${totalInterviewBankCount}+ questions`,
-          progressDetail: `${interviewQuestionProgress.completed}/${interviewQuestionProgress.total}+ practised`,
+          countLabel:
+            interviewModules.length > 0
+              ? `${interviewModules.length} AI modules`
+              : `${totalInterviewBankCount}+ questions`,
+          progressDetail:
+            interviewModules.length > 0
+              ? `${interviewModuleMinutes} min role plan • ${interviewQuestionProgress.completed}/${interviewQuestionProgress.total}+ practised`
+              : `${interviewQuestionProgress.completed}/${interviewQuestionProgress.total}+ practised`,
           progressStatus: interviewQuestionProgress,
         };
       }
 
       if (category.id === "resume-cv") {
+        const cvMinutes = cvModules.reduce(
+          (sum, module) => sum + module.estimatedMinutes,
+          0,
+        );
+
         return {
           ...category,
-          countLabel: pluralize(cvProgress.total, "CV task"),
-          progressDetail: `${cvProgress.completed}/${cvProgress.total} CV tasks complete`,
+          countLabel:
+            cvModules.length > 0
+              ? `${cvModules.length} AI module${cvModules.length === 1 ? "" : "s"}`
+              : pluralize(cvProgress.total, "CV task"),
+          progressDetail:
+            cvModules.length > 0
+              ? `${cvMinutes} min role plan • ${cvProgress.completed}/${cvProgress.total} CV tasks complete`
+              : `${cvProgress.completed}/${cvProgress.total} CV tasks complete`,
           progressStatus: cvProgress,
         };
       }
@@ -283,10 +366,16 @@ export default function LearnScreen() {
       if (category.id === "skills-knowledge") {
         return {
           ...category,
-          countLabel: selectedRole
-            ? pluralize(selectedRole.popularKeywords.length, "role skill")
-            : "Choose role",
-          progressDetail: `${skillsProgress.completed}/${skillsProgress.total} skill tasks complete`,
+          countLabel:
+            learnModules.length > 0
+              ? `${learnModules.length} AI lesson${learnModules.length === 1 ? "" : "s"}`
+              : selectedRole
+                ? pluralize(selectedRole.popularKeywords.length, "role skill")
+                : "Choose role",
+          progressDetail:
+            learnModules.length > 0
+              ? `${learnModules[0]?.title ?? "Role lesson"}`
+              : `${skillsProgress.completed}/${skillsProgress.total} skill tasks complete`,
           progressStatus: skillsProgress,
         };
       }
@@ -297,19 +386,13 @@ export default function LearnScreen() {
           countLabel: selectedExperienceLevel
             ? `${selectedExperienceLevel.label} plan`
             : "Choose level",
-          progressDetail: selectedExperienceLevel
-            ? `${selectedRoleLabel} guidance for ${selectedLevelLabel}`
-            : "Select your experience level",
+          progressDetail:
+            learningPlan?.summary && totalPlanMinutes > 0
+              ? `${totalPlanMinutes} min • ${learningPlan.summary}`
+              : selectedExperienceLevel
+                ? `${selectedRoleLabel} guidance for ${selectedLevelLabel}`
+                : "Select your experience level",
           progressStatus: null,
-        };
-      }
-
-      if (category.id === "hr-interviews") {
-        return {
-          ...category,
-          countLabel: `${bankCounts.hr}+ questions`,
-          progressDetail: `${hrProgress.completed}/${hrProgress.total}+ practised`,
-          progressStatus: hrProgress,
         };
       }
 
@@ -319,15 +402,6 @@ export default function LearnScreen() {
           countLabel: `${bankCounts.technical}+ questions`,
           progressDetail: `${technicalProgress.completed}/${technicalProgress.total}+ practised`,
           progressStatus: technicalProgress,
-        };
-      }
-
-      if (category.id === "case-interviews") {
-        return {
-          ...category,
-          countLabel: `${bankCounts.case}+ questions`,
-          progressDetail: `${caseProgress.completed}/${caseProgress.total}+ practised`,
-          progressStatus: caseProgress,
         };
       }
 
@@ -351,6 +425,7 @@ export default function LearnScreen() {
     bankCounts,
     getProgressForMissions,
     getProgressForQuestions,
+    learningPlan,
     selectedExperienceLevel,
     selectedRole,
     totalInterviewBankCount,
@@ -440,6 +515,70 @@ export default function LearnScreen() {
               value={searchQuery}
             />
           </View>
+
+          {selectedRole && selectedExperienceLevel ? (
+            <View
+              className="mt-3 rounded-[18px] bg-white px-4 py-3"
+              style={{ boxShadow: "0 12px 28px rgba(13, 19, 43, 0.06)" }}
+            >
+              {learningPlanStatus === "loading" ? (
+                <View className="flex-row items-center gap-3">
+                  <ActivityIndicator color={colors.primary} size="small" />
+                  <Text className="flex-1 text-[13px] font-semibold leading-[18px] text-[#8F92A8]">
+                    Building your role learning plan...
+                  </Text>
+                </View>
+              ) : null}
+
+              {learningPlanStatus === "error" ? (
+                <View>
+                  <Text className="text-[13px] font-semibold leading-[18px] text-[#C93A3A]">
+                    {learningPlanError ??
+                      "CareerFox could not generate your role learning plan."}
+                  </Text>
+                  <Pressable
+                    accessibilityLabel="Retry role learning plan"
+                    accessibilityRole="button"
+                    className="mt-2 self-start rounded-full bg-[#F5F1FF] px-4 py-2"
+                    onPress={() => void generateLearningPlan()}
+                  >
+                    <Text className="text-[12px] font-bold leading-[16px] text-primary">
+                      Retry
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null}
+
+              {learningPlanStatus === "success" && learningPlan ? (
+                <View>
+                  <Text className="text-[13px] font-bold leading-[18px] text-primary">
+                    {learningPlan.title}
+                  </Text>
+                  <Text className="mt-1 text-[12px] font-semibold leading-[17px] text-[#8F92A8]">
+                    {learningPlan.summary}
+                  </Text>
+                </View>
+              ) : null}
+
+              {learningPlanStatus === "success" && !learningPlan ? (
+                <View>
+                  <Text className="text-[13px] font-semibold leading-[18px] text-[#8F92A8]">
+                    Your role plan is not ready yet.
+                  </Text>
+                  <Pressable
+                    accessibilityLabel="Generate role learning plan"
+                    accessibilityRole="button"
+                    className="mt-2 self-start rounded-full bg-[#F5F1FF] px-4 py-2"
+                    onPress={() => void generateLearningPlan()}
+                  >
+                    <Text className="text-[12px] font-bold leading-[16px] text-primary">
+                      Generate
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </View>
 
         <View

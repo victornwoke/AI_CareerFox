@@ -1,0 +1,7 @@
+import pathlib
+
+root = pathlib.Path('/Users/vic/Documents/AI_CareerFox/.venv/lib/python3.14/site-packages')
+for path in root.rglob('*.py'):
+    text = path.read_text(errors='ignore')
+    if 'EdgeTransport' in text and 'async def join' in text and 'class ' in text:
+        print(path)

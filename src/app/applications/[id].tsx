@@ -2,20 +2,20 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-  Alert,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
+    Alert,
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SymbolIcon } from "@/components/ui/SymbolIcon";
 import { colors, gradients } from "@/constants/colors";
 import {
-  type ApplicationStatus,
-  useApplicationStore,
+    type ApplicationStatus,
+    useApplicationStore,
 } from "@/store/useApplicationStore";
 
 const statusOptions: { label: string; status: ApplicationStatus }[] = [
@@ -70,8 +70,12 @@ export default function ApplicationDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const applications = useApplicationStore((state) => state.applications);
-  const updateApplication = useApplicationStore((state) => state.updateApplication);
-  const removeApplication = useApplicationStore((state) => state.removeApplication);
+  const updateApplication = useApplicationStore(
+    (state) => state.updateApplication,
+  );
+  const removeApplication = useApplicationStore(
+    (state) => state.removeApplication,
+  );
   const application = applications.find((item) => item.id === id);
   const [nextAction, setNextAction] = useState(application?.nextAction ?? "");
   const [deadline, setDeadline] = useState(application?.deadline ?? "");
@@ -241,7 +245,9 @@ export default function ApplicationDetailScreen() {
                       <View
                         className="h-[3px] flex-1 rounded-full"
                         style={{
-                          backgroundColor: isActive ? colors.primary : "#EEE9FF",
+                          backgroundColor: isActive
+                            ? colors.primary
+                            : "#EEE9FF",
                         }}
                       />
                     ) : null}

@@ -1,15 +1,15 @@
 import { useSignIn } from "@clerk/expo";
-import { Link, useRouter, type Href } from "expo-router";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import { Link, useRouter, type Href } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Pressable,
   ScrollView,
-  Text,
   StyleSheet,
+  Text,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -20,10 +20,7 @@ import { VerificationModal } from "@/components/auth/VerificationModal";
 import { colors, gradients } from "@/constants/colors";
 import { images } from "@/constants/images";
 import { componentStyles } from "@/constants/theme";
-import {
-  useSocialAuth,
-  type SocialAuthProvider,
-} from "@/hooks/useSocialAuth";
+import { useSocialAuth, type SocialAuthProvider } from "@/hooks/useSocialAuth";
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import { getClerkErrorMessage } from "@/lib/clerkErrors";
 
@@ -34,7 +31,13 @@ export default function SignInScreen() {
   const { fetchStatus, signIn } = useSignIn();
   const { startSocialAuth } = useSocialAuth();
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
+  const isTablet = width >= 768;
+  const formMaxWidth = isTablet ? 560 : undefined;
+  const isLandscape = width > height;
+  const heroHeight = isLandscape
+    ? Math.max(152, Math.min(196, Math.round(height * 0.46)))
+    : Math.max(208, Math.min(280, Math.round(height * 0.29)));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
@@ -203,34 +206,37 @@ export default function SignInScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="min-h-full bg-background">
-          <View
-            className="items-center rounded-b-[48px] px-6"
-            style={{
-              backgroundColor: colors.primary,
-              height: 244,
-              paddingTop: Math.max(insets.top + 12, 32),
-            }}
-          >
-            <Image
-              accessibilityLabel="CareerFox coach mascot"
-              contentFit="contain"
-              source={images.careerFoxCoach}
-              style={{ height: 90, width: 96 }}
-            />
-            <Text className="mt-5 text-center text-[25px] font-bold leading-[31px] text-white">
-              Welcome back!
-            </Text>
-            <Text className="mt-3 text-center text-[16px] font-medium leading-[22px] text-white/70">
-              Sign in to continue your journey
-            </Text>
-          </View>
+        <View
+          className="items-center rounded-b-[48px] px-6"
+          style={{
+            backgroundColor: colors.primary,
+            height: heroHeight,
+            paddingTop: Math.max(insets.top + 12, 32),
+          }}
+        >
+          <Image
+            accessibilityLabel="CareerFox coach mascot"
+            contentFit="contain"
+            source={images.careerFoxCoach}
+            style={{ height: 90, width: 96 }}
+          />
+          <Text className="mt-5 text-center text-[25px] font-bold leading-[31px] text-white">
+            Welcome back!
+          </Text>
+          <Text className="mt-3 text-center text-[16px] font-medium leading-[22px] text-white/70">
+            Sign in to continue your journey
+          </Text>
+        </View>
 
+        <View className="min-h-full bg-background">
           <View
             className="mx-6 -mt-9 rounded-[24px] bg-white px-6 pb-6 pt-6"
             style={{
+              alignSelf: "center",
               borderCurve: "continuous",
               boxShadow: "0 18px 44px rgba(108, 78, 245, 0.09)",
+              maxWidth: formMaxWidth,
+              width: "100%",
             }}
           >
             <View className="gap-3.5">
@@ -297,7 +303,9 @@ export default function SignInScreen() {
                 {isLoading ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (
-                  <Text className="text-[17px] font-bold text-white">Sign In</Text>
+                  <Text className="text-[17px] font-bold text-white">
+                    Sign In
+                  </Text>
                 )}
               </LinearGradient>
             </Pressable>
@@ -311,7 +319,9 @@ export default function SignInScreen() {
             </View>
 
             <View className="flex-row gap-2">
-              {(["Google", "Apple", "LinkedIn"] satisfies SocialAuthProvider[]).map((provider) => (
+              {(
+                ["Google", "Apple", "LinkedIn"] satisfies SocialAuthProvider[]
+              ).map((provider) => (
                 <Pressable
                   accessibilityRole="button"
                   className="h-[46px] flex-1 items-center justify-center rounded-[18px] border border-auth-border bg-white px-1"
@@ -332,7 +342,14 @@ export default function SignInScreen() {
             </View>
           </View>
 
-          <View className="mt-7 px-6">
+          <View
+            className="mt-7 px-6"
+            style={{
+              alignSelf: "center",
+              maxWidth: formMaxWidth,
+              width: "100%",
+            }}
+          >
             <Text className="text-center text-[15px] font-medium leading-[22px] text-auth-muted">
               Don’t have an account?{" "}
               <Link href="/sign-up">

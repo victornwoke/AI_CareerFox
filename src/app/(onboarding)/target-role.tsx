@@ -1,14 +1,14 @@
 import { useAuth } from "@clerk/expo";
 import { LinearGradient } from "expo-linear-gradient";
-import { Redirect, type Href, useRouter } from "expo-router";
+import { Redirect, useRouter, type Href } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  useWindowDimensions,
-  View,
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -187,7 +187,9 @@ export default function TargetRoleScreen() {
                 <View className="ml-4 flex-1">
                   <Text
                     className="text-[18px] font-bold leading-[24px]"
-                    style={{ color: isSelected ? colors.primary : colors.textPrimary }}
+                    style={{
+                      color: isSelected ? colors.primary : colors.textPrimary,
+                    }}
                   >
                     {role.title}
                   </Text>
