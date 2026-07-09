@@ -196,7 +196,7 @@ function mapGeminiHttpError(
   if (status >= 400) {
     return new AiProviderError(
       "CareerFox AI could not process this request right now.",
-      502,
+      400,
     );
   }
 

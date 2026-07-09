@@ -315,7 +315,7 @@ export default function CvResultsScreen() {
         start={{ x: 0, y: 0 }}
         style={{
           paddingHorizontal: isNarrow ? 20 : 24,
-          paddingTop: Math.max(insets.top - 20, 18),
+          paddingTop: Math.max(insets.top - 8, 24),
           paddingBottom: 14,
         }}
       >
@@ -467,20 +467,6 @@ export default function CvResultsScreen() {
                   </Text>
                 </LinearGradient>
               </Pressable>
-            </View>
-          ) : null}
-
-          {feedback?.isAiFallback ? (
-            <View
-              className="flex-row items-center gap-3 rounded-[18px] bg-[#FFF8E6] px-4 py-4"
-              style={{ boxShadow: "0 4px 12px rgba(255, 160, 0, 0.10)" }}
-            >
-              <Text className="text-[18px]">⚠️</Text>
-              <Text className="flex-1 text-[13px] font-semibold leading-[20px] text-[#92400E]">
-                AI analysis is temporarily unavailable — showing an offline
-                template. Please try again in a moment for full personalised
-                feedback.
-              </Text>
             </View>
           ) : null}
 

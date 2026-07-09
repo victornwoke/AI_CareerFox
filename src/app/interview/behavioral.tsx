@@ -138,7 +138,7 @@ export default function BehavioralInterviewScreen() {
     <View className="flex-1 bg-white">
       <View
         className="bg-[#F6F2FF] px-6"
-        style={{ paddingTop: Math.max(insets.top - 20, 18), paddingBottom: 12 }}
+        style={{ paddingTop: Math.max(insets.top - 8, 24), paddingBottom: 12 }}
       >
         <View className="flex-row items-center gap-4">
           <Pressable

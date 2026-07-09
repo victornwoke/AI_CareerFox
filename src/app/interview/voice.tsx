@@ -745,7 +745,7 @@ export default function VoicePracticeScreen() {
           alignSelf: "center",
           maxWidth: contentMaxWidth,
           paddingHorizontal: 18,
-          paddingTop: Math.max(insets.top - 8, 20),
+          paddingTop: Math.max(insets.top - 8, 24),
           paddingBottom: 12,
           width: "100%",
         }}
